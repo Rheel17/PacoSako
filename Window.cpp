@@ -24,6 +24,8 @@ BoardView::BoardView(wxWindow *parent, Game& game) :
 		wxWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_SUNKEN),
 		_game(game) {
 
+	_display = game.GetBoard();
+
 	SetDoubleBuffered(true);
 	SetMinSize({ _TILE_SIZE * 9, _TILE_SIZE * 9 });
 
@@ -80,6 +82,7 @@ void BoardView::MouseLeftDownEvent(wxMouseEvent& evt) {
 		const Piece& draggingPiece = _game.GetBoard()[_moving_piece_origin];
 
 		if (draggingPiece.GetColor() == _game.GetPlayerColor() || draggingPiece.GetColor() == Piece::Color::UNION) {
+			_display[_moving_piece_origin] = Piece();
 			_moving_piece = draggingPiece;
 			_possible_moves = _game.GetBoard().CalculatePossibleMoves(_moving_piece_origin, _game.GetPlayerColor());
 			_current_move = ps::Move(_moving_piece_origin);
@@ -183,9 +186,7 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 	// draw the pieces
 	for (int x = 0; x < 8; x++) {
 		for (int y = 0; y < 8; y++) {
-			if (x != _moving_piece_origin.GetColumn() || 7 - y != _moving_piece_origin.GetRow()) {
-				_DrawPiece(gc, _game.GetBoard()[{ 7 - y, x }], { wxDouble(x), wxDouble(y) });
-			}
+			_DrawPiece(gc, _display[{ 7 - y, x }], { wxDouble(x), wxDouble(y) });
 		}
 	}
 
@@ -228,8 +229,9 @@ void BoardView::_PutDown() {
 		_current_move.AddPosition(_mouse_position);
 
 		if (_game.GetBoard()[_mouse_position].GetColor() == Piece::Color::UNION) {
-
-			// TODO: move onto a union
+			_moving_piece = _display[_mouse_position].MakeUnionWith(_moving_piece);
+			_moving_piece_origin = _mouse_position;
+			_possible_moves = _display.CalculatePossibleMoves(_moving_piece_origin, _moving_piece, _game.GetPlayerColor());
 			return;
 		} else {
 			_game.MakeMove(_current_move);
@@ -240,6 +242,7 @@ void BoardView::_PutDown() {
 	_moving_piece = Piece();
 	_possible_moves.clear();
 	_current_move = ps::Move();
+	_display = _game.GetBoard();
 }
 
 Window::Window(Game& game) :

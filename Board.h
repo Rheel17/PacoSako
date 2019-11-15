@@ -45,13 +45,14 @@ public:
 	Piece& operator[](const BoardPosition& position);
 
 	std::vector<BoardPosition> CalculatePossibleMoves(const BoardPosition& piece, Piece::Color playerColor) const;
+	std::vector<BoardPosition> CalculatePossibleMoves(const BoardPosition& origin, const Piece& piece, Piece::Color playerColor) const;
 
 private:
-	void _AddPawnMoves(const BoardPosition& position, Piece::Color playerColor, std::vector<BoardPosition>& vec) const;
-	void _AddKnightMoves(const BoardPosition& position, Piece::Color playerColor, std::vector<BoardPosition>& vec) const;
-	void _AddDiagonalMoves(const BoardPosition& position, Piece::Color playerColor, std::vector<BoardPosition>& vec) const;
-	void _AddStraightMoves(const BoardPosition& position, Piece::Color playerColor, std::vector<BoardPosition>& vec) const;
-	void _AddMoves(const BoardPosition& position, Piece::Color playerColor, std::vector<BoardPosition>& vec, std::array<BoardPosition, 4> dps) const;
+	void _AddPawnMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec) const;
+	void _AddKnightMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec) const;
+	void _AddDiagonalMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec) const;
+	void _AddStraightMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec) const;
+	void _AddMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec, std::array<BoardPosition, 4> dps) const;
 
 	Piece _squares[8][8] {};
 

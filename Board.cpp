@@ -92,26 +92,30 @@ Piece& Board::operator[](const BoardPosition& position) {
 }
 
 std::vector<BoardPosition> Board::CalculatePossibleMoves(const BoardPosition &piece, Piece::Color playerColor) const {
+	return CalculatePossibleMoves(piece, GetPiece(piece), playerColor);
+}
+
+std::vector<BoardPosition> Board::CalculatePossibleMoves(const BoardPosition& origin, const Piece& piece, Piece::Color playerColor) const {
 	std::vector<BoardPosition> vec;
-	Piece::Type type = GetPiece(piece).GetTypeOfColor(playerColor);
+	Piece::Type type = piece.GetTypeOfColor(playerColor);
 
 	switch (type) {
 		case Piece::Type::NONE: break;
 		case Piece::Type::PAWN:
-			_AddPawnMoves(piece, playerColor, vec);
+			_AddPawnMoves(origin, piece, playerColor, vec);
 			break;
 		case Piece::Type::ROOK:
-			_AddStraightMoves(piece, playerColor, vec);
+			_AddStraightMoves(origin, piece, playerColor, vec);
 			break;
 		case Piece::Type::KNIGHT:
-			_AddKnightMoves(piece, playerColor, vec);
+			_AddKnightMoves(origin, piece, playerColor, vec);
 			break;
 		case Piece::Type::BISHOP:
-			_AddDiagonalMoves(piece, playerColor, vec);
+			_AddDiagonalMoves(origin, piece, playerColor, vec);
 			break;
 		case Piece::Type::QUEEN:
-			_AddStraightMoves(piece, playerColor, vec);
-			_AddDiagonalMoves(piece, playerColor, vec);
+			_AddStraightMoves(origin, piece, playerColor, vec);
+			_AddDiagonalMoves(origin, piece, playerColor, vec);
 			break;
 		case Piece::Type::KING:
 			break;
@@ -120,12 +124,12 @@ std::vector<BoardPosition> Board::CalculatePossibleMoves(const BoardPosition &pi
 	return vec;
 }
 
-void Board::_AddPawnMoves(const BoardPosition &position, Piece::Color playerColor, std::vector<BoardPosition> &vec) const {
+void Board::_AddPawnMoves(const BoardPosition &position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition> &vec) const {
 	int startingRow = playerColor == Piece::Color::WHITE ? 0 : 7;
 	int forward = playerColor == Piece::Color::WHITE ? 1 : -1;
 
 	// cannot make a union if we are a union
-	if (GetPiece(position).GetColor() != Piece::Color::UNION) {
+	if (piece.GetColor() != Piece::Color::UNION) {
 		BoardPosition diagLeft = { position.GetRow() + forward, position.GetColumn() - 1 };
 		BoardPosition diagRight = { position.GetRow() + forward, position.GetColumn() + 1 };
 
@@ -160,7 +164,7 @@ void Board::_AddPawnMoves(const BoardPosition &position, Piece::Color playerColo
 	}
 }
 
-void Board::_AddKnightMoves(const BoardPosition& position, Piece::Color playerColor, std::vector<BoardPosition>& vec) const {
+void Board::_AddKnightMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec) const {
 	std::array<BoardPosition, 8> dps = { {
 			{ -2, -1 }, { -2, 1 }, { -1, -2 }, { -1, 2 },
 			{  2, -1 }, {  2, 1 }, {  1, -2 }, {  1, 2 }
@@ -177,7 +181,9 @@ void Board::_AddKnightMoves(const BoardPosition& position, Piece::Color playerCo
 		BoardPosition pos { r, c };
 		Piece::Color pieceColor = GetPiece(pos).GetColor();
 
-		// TODO: cannot make a union if we are a union
+		if (piece.GetColor() == Piece::Color::UNION && pieceColor != Piece::Color::EMPTY) {
+			continue;
+		}
 
 		if (pieceColor != playerColor) {
 			vec.push_back(pos);
@@ -185,17 +191,17 @@ void Board::_AddKnightMoves(const BoardPosition& position, Piece::Color playerCo
 	}
 }
 
-void Board::_AddDiagonalMoves(const BoardPosition& position, Piece::Color playerColor, std::vector<BoardPosition>& vec) const {
+void Board::_AddDiagonalMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec) const {
 	std::array<BoardPosition, 4> dps = { { { 1, 1 }, { 1, -1 }, { -1, 1 }, { -1, -1 } } };
-	_AddMoves(position, playerColor, vec, dps);
+	_AddMoves(position, piece, playerColor, vec, dps);
 }
 
-void Board::_AddStraightMoves(const BoardPosition& position, Piece::Color playerColor, std::vector<BoardPosition>& vec) const {
+void Board::_AddStraightMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec) const {
 	std::array<BoardPosition, 4> dps = { { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } } };
-	_AddMoves(position, playerColor, vec, dps);
+	_AddMoves(position, piece, playerColor, vec, dps);
 }
 
-void Board::_AddMoves(const BoardPosition& position, Piece::Color playerColor, std::vector<BoardPosition>& vec, std::array<BoardPosition, 4> dps) const {
+void Board::_AddMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec, std::array<BoardPosition, 4> dps) const {
 	for (const auto& dp : dps) {
 		for (int i = 1; i < 8; i++) {
 			if (i == 0) {
@@ -212,8 +218,9 @@ void Board::_AddMoves(const BoardPosition& position, Piece::Color playerColor, s
 			BoardPosition pos { r, c };
 			Piece::Color pieceColor = GetPiece(pos).GetColor();
 
-
-			// TODO: cannot make a union if we are a union
+			if (piece.GetColor() == Piece::Color::UNION && pieceColor != Piece::Color::EMPTY) {
+				break;
+			}
 
 			if (pieceColor == playerColor) {
 				break;

@@ -43,7 +43,7 @@ void Move::PerformOn(Board &board) const {
 				movingPiece = Piece();
 				break;
 			case Piece::Color::UNION:
-				// TODO: chain
+				movingPiece = toPiece.MakeUnionWith(movingPiece);
 				break;
 			case Piece::Color::WHITE:
 			case Piece::Color::BLACK:

@@ -1,8 +1,8 @@
 /*
  * Copyright © 2019 Levi van Rheenen. All rights reserved.
  */
-#ifndef WINDOW_H_OLD_
-#define WINDOW_H_OLD_
+#ifndef WINDOW_H_
+#define WINDOW_H_
 
 #include <wx/wx.h>
 
@@ -35,6 +35,7 @@ private:
 	void _PutDown();
 
 	Game& _game;
+	Board _display;
 	bool _rotated = false;
 
 	bool _mouse_down = false;

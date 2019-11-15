@@ -54,20 +54,23 @@ Piece::Color Piece::GetColor() const {
 	return _color;
 }
 
-void Piece::MakeUnionWith(const Piece& other) {
+Piece Piece::MakeUnionWith(const Piece& other) {
 	assert(other.GetColor() != Color::EMPTY);
 	assert(other.GetColor() != Color::UNION);
 	assert(other.GetColor() != GetColor());
 	assert(GetColor() != Color::EMPTY);
-	assert(GetColor() != Color::UNION);
-
-	if (_color == Color::WHITE) {
-		_black_type = other.GetBlackType();
-	} else {
-		_white_type = other.GetWhiteType();
-	}
 
 	_color = Color::UNION;
+
+	if (other._color == Color::WHITE) {
+		Piece result(_white_type, Type::NONE);
+		_white_type = other.GetWhiteType();
+		return result;
+	} else {
+		Piece result(Type::NONE, _black_type);
+		_black_type = other.GetBlackType();
+		return result;
+	}
 }
 
 std::ostream& operator<<(std::ostream& out, const Piece& piece) {
