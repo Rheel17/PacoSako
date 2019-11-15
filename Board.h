@@ -20,6 +20,7 @@ public:
 
 	int GetRow() const;
 	int GetColumn() const;
+	std::string GetName() const;
 
 	bool IsValid() const;
 

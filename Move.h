@@ -10,7 +10,18 @@ namespace ps {
 
 class Move {
 
+public:
+	Move() = default;
+	Move(BoardPosition startMove);
 
+	void AddPosition(BoardPosition position);
+
+	void PerformOn(Board& board) const;
+
+	friend std::ostream& operator<<(std::ostream& out, const Move& move);
+
+private:
+	std::vector<BoardPosition> _positions;
 
 };
 

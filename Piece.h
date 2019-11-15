@@ -28,6 +28,8 @@ public:
 	Type GetTypeOfColor(Color color) const;
 	Color GetColor() const;
 
+	void MakeUnionWith(const Piece& other);
+
 	friend std::ostream& operator<<(std::ostream& out, const Piece& piece);
 
 private:

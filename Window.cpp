@@ -20,7 +20,7 @@ BEGIN_EVENT_TABLE(BoardView, wxPanel)
 	EVT_MOTION(BoardView::MouseMotionEvent)
 END_EVENT_TABLE()
 
-BoardView::BoardView(wxWindow *parent, const Game& game) :
+BoardView::BoardView(wxWindow *parent, Game& game) :
 		wxWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_SUNKEN),
 		_game(game) {
 
@@ -82,6 +82,7 @@ void BoardView::MouseLeftDownEvent(wxMouseEvent& evt) {
 		if (draggingPiece.GetColor() == _game.GetPlayerColor() || draggingPiece.GetColor() == Piece::Color::UNION) {
 			_moving_piece = draggingPiece;
 			_possible_moves = _game.GetBoard().CalculatePossibleMoves(_moving_piece_origin, _game.GetPlayerColor());
+			_current_move = ps::Move(_moving_piece_origin);
 
 			_Redraw();
 		} else {
@@ -224,11 +225,21 @@ void BoardView::_PutDown() {
 	if (_moving_piece_origin != _mouse_position && _mouse_position.IsValid() &&
 			std::find(_possible_moves.begin(), _possible_moves.end(), _mouse_position) != _possible_moves.end()) {
 
+		_current_move.AddPosition(_mouse_position);
+
+		if (_game.GetBoard()[_mouse_position].GetColor() == Piece::Color::UNION) {
+
+			// TODO: move onto a union
+			return;
+		} else {
+			_game.MakeMove(_current_move);
+		}
 	}
 
 	_moving_piece_origin = { -1, -1 };
 	_moving_piece = Piece();
 	_possible_moves.clear();
+	_current_move = ps::Move();
 }
 
 Window::Window(Game& game) :

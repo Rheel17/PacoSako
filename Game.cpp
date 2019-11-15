@@ -41,7 +41,8 @@ void Game::SwitchPlayerColor() {
 }
 
 void Game::MakeMove(const Move& move) {
-
+	move.PerformOn(*_board);
+	SwitchPlayerColor();
 }
 
 }

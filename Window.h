@@ -18,7 +18,7 @@ class BoardView : public wxWindow {
 	wxDECLARE_EVENT_TABLE();
 
 public:
-	BoardView(wxWindow *parent, const Game& game);
+	BoardView(wxWindow *parent, Game& game);
 
     void PaintEvent(wxPaintEvent& evt);
     void SizeEvent(wxSizeEvent& evt);
@@ -34,7 +34,7 @@ private:
 
 	void _PutDown();
 
-	const Game& _game;
+	Game& _game;
 	bool _rotated = false;
 
 	bool _mouse_down = false;

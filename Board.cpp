@@ -22,6 +22,15 @@ int BoardPosition::GetColumn() const {
 	return _column;
 }
 
+std::string BoardPosition::GetName() const {
+	if (IsValid()) {
+		const char name[3] = { char(_column + 'a'), char(_row + '1'), 0 };
+		return std::string(name);
+	} else {
+		return "invalid";
+	}
+}
+
 bool BoardPosition::IsValid() const {
 	return _row >= 0 && _row < 8 && _column >= 0 && _column < 8;
 }
@@ -115,20 +124,23 @@ void Board::_AddPawnMoves(const BoardPosition &position, Piece::Color playerColo
 	int startingRow = playerColor == Piece::Color::WHITE ? 0 : 7;
 	int forward = playerColor == Piece::Color::WHITE ? 1 : -1;
 
-	BoardPosition diagLeft = { position.GetRow() + forward, position.GetColumn() - 1 };
-	BoardPosition diagRight = { position.GetRow() + forward, position.GetColumn() + 1 };
+	// cannot make a union if we are a union
+	if (GetPiece(position).GetColor() != Piece::Color::UNION) {
+		BoardPosition diagLeft = { position.GetRow() + forward, position.GetColumn() - 1 };
+		BoardPosition diagRight = { position.GetRow() + forward, position.GetColumn() + 1 };
 
-	if (0 <= diagLeft.GetColumn()) {
-		Piece::Color color = GetPiece(diagLeft).GetColor();
-		if (!(color == playerColor || color == Piece::Color::EMPTY)) {
-			vec.push_back(diagLeft);
+		if (0 <= diagLeft.GetColumn()) {
+			Piece::Color color = GetPiece(diagLeft).GetColor();
+			if (!(color == playerColor || color == Piece::Color::EMPTY)) {
+				vec.push_back(diagLeft);
+			}
 		}
-	}
 
-	if (diagRight.GetColumn() < 8) {
-		Piece::Color color = GetPiece(diagRight).GetColor();
-		if (!(color == playerColor || color == Piece::Color::EMPTY)) {
-			vec.push_back(diagRight);
+		if (diagRight.GetColumn() < 8) {
+			Piece::Color color = GetPiece(diagRight).GetColor();
+			if (!(color == playerColor || color == Piece::Color::EMPTY)) {
+				vec.push_back(diagRight);
+			}
 		}
 	}
 
@@ -165,6 +177,8 @@ void Board::_AddKnightMoves(const BoardPosition& position, Piece::Color playerCo
 		BoardPosition pos { r, c };
 		Piece::Color pieceColor = GetPiece(pos).GetColor();
 
+		// TODO: cannot make a union if we are a union
+
 		if (pieceColor != playerColor) {
 			vec.push_back(pos);
 		}
@@ -197,6 +211,9 @@ void Board::_AddMoves(const BoardPosition& position, Piece::Color playerColor, s
 
 			BoardPosition pos { r, c };
 			Piece::Color pieceColor = GetPiece(pos).GetColor();
+
+
+			// TODO: cannot make a union if we are a union
 
 			if (pieceColor == playerColor) {
 				break;
