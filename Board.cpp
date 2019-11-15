@@ -118,6 +118,7 @@ std::vector<BoardPosition> Board::CalculatePossibleMoves(const BoardPosition& or
 			_AddDiagonalMoves(origin, piece, playerColor, vec);
 			break;
 		case Piece::Type::KING:
+			_AddKingMoves(origin, piece, playerColor, vec);
 			break;
 	}
 
@@ -187,6 +188,26 @@ void Board::_AddKnightMoves(const BoardPosition& position, const Piece& piece, P
 
 		if (pieceColor != playerColor) {
 			vec.push_back(pos);
+		}
+	}
+}
+
+void Board::_AddKingMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec) const {
+	for (int dc = -1; dc <= 1; dc++) {
+		for (int dr = -1; dr <= 1; dr++) {
+			int r = position.GetRow() + dr;
+			int c = position.GetColumn() + dc;
+
+			if (r > 7 || c > 7 || r < 0 || c < 0) {
+				continue;
+			}
+
+			BoardPosition pos { r, c };
+			Piece::Color pieceColor = GetPiece(pos).GetColor();
+
+			if (pieceColor == Piece::Color::EMPTY) {
+				vec.push_back(pos);
+			}
 		}
 	}
 }
