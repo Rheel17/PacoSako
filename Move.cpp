@@ -53,6 +53,23 @@ void Move::PerformOn(Board &board) const {
 					toPiece = epPiece;
 					epPiece = Piece();
 					movingPiece = toPiece.MakeUnionWith(movingPiece);
+				} else if (movingPiece.GetColor() != Piece::Color::UNION &&
+						movingPiece.GetTypeOfColor(movingPiece.GetColor()) == Piece::Type::KING &&
+						abs(_positions[i].GetColumn() - to.GetColumn()) == 2) {
+
+					// this was a castling move
+					toPiece = movingPiece;
+					movingPiece = Piece();
+
+					int delta = _positions[i].GetColumn() - to.GetColumn();
+
+					if (delta == 2) {
+						board[{ to.GetRow(), to.GetColumn() + delta / 2}] = board[{ to.GetRow(), 0}];
+						board[{ to.GetRow(), 0 }] = Piece();
+					} else if (delta == -2) {
+						board[{ to.GetRow(), to.GetColumn() + delta / 2}] = board[{ to.GetRow(), 7}];
+						board[{ to.GetRow(), 7 }] = Piece();
+					}
 				} else {
 					toPiece = movingPiece;
 					movingPiece = Piece();
