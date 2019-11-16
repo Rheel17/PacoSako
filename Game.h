@@ -9,6 +9,7 @@
 #include <memory>
 
 #include "Move.h"
+#include "GameMoveData.h"
 
 namespace ps {
 
@@ -21,11 +22,14 @@ public:
 
 	const Board& GetBoard() const;
 
+	const GameMoveData& GetMoveData() const;
+
 	Piece::Color GetPlayerColor() const;
 
 	void SwitchPlayerColor();
 
 	void MakeMove(const Move& move);
+
 
 private:
 	Game(const Game&) = delete;
@@ -36,6 +40,7 @@ private:
 	wxFrame *_window = nullptr;
 	std::unique_ptr<Board> _board;
 	Piece::Color _player_color = Piece::Color::WHITE;
+	GameMoveData _move_data;
 
 };
 

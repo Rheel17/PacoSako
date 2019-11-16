@@ -15,6 +15,10 @@ void Move::AddPosition(BoardPosition to) {
 	_positions.push_back(std::move(to));
 }
 
+const std::vector<BoardPosition>& Move::GetPositions() const {
+	return _positions;
+}
+
 void Move::PerformOn(Board &board) const {
 	assert(_positions.size() > 1);
 
@@ -39,8 +43,20 @@ void Move::PerformOn(Board &board) const {
 
 		switch (toPiece.GetColor()) {
 			case Piece::Color::EMPTY:
-				toPiece = movingPiece;
-				movingPiece = Piece();
+				if (movingPiece.GetTypeOfColor(movingPiece.GetColor()) == Piece::Type::PAWN &&
+						_positions[i].GetColumn() != to.GetColumn()) {
+
+					// this was an en passant move
+					BoardPosition enPassantPosition = { _positions[i].GetRow(), to.GetColumn() };
+					Piece& epPiece = board[enPassantPosition];
+
+					toPiece = epPiece;
+					epPiece = Piece();
+					movingPiece = toPiece.MakeUnionWith(movingPiece);
+				} else {
+					toPiece = movingPiece;
+					movingPiece = Piece();
+				}
 				break;
 			case Piece::Color::UNION:
 				movingPiece = toPiece.MakeUnionWith(movingPiece);

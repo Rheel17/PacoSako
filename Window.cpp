@@ -20,8 +20,6 @@ BEGIN_EVENT_TABLE(BoardView, wxPanel)
 	EVT_MOTION(BoardView::MouseMotionEvent)
 END_EVENT_TABLE()
 
-// TODO: reverse black-white position on board rotation (not 7-r) (macro?)
-
 BoardView::BoardView(wxWindow *parent, Game& game) :
 		wxWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_SUNKEN),
 		_game(game) {
@@ -87,7 +85,7 @@ void BoardView::MouseLeftDownEvent(wxMouseEvent& evt) {
 		if (draggingPiece.GetColor() == _game.GetPlayerColor() || draggingPiece.GetColor() == Piece::Color::UNION) {
 			_display[_moving_piece_origin] = Piece();
 			_moving_piece = draggingPiece;
-			_possible_moves = _game.GetBoard().CalculatePossibleMoves(_moving_piece_origin, _game.GetPlayerColor());
+			_possible_moves = _game.GetBoard().CalculatePossibleMoves(_moving_piece_origin, _game.GetPlayerColor(), _game.GetMoveData());
 			_current_move = ps::Move(_moving_piece_origin);
 
 			_Redraw();
@@ -290,13 +288,32 @@ void BoardView::_PutDown() {
 
 		_current_move.AddPosition(_mouse_position);
 
-		if (_game.GetBoard()[_mouse_position].GetColor() == Piece::Color::UNION) {
-			_moving_piece = _display[_mouse_position].MakeUnionWith(_moving_piece);
-			_moving_piece_origin = _mouse_position;
-			_possible_moves = _display.CalculatePossibleMoves(_moving_piece_origin, _moving_piece, _game.GetPlayerColor());
-			return;
+		if (_game.GetBoard()[_mouse_position].GetColor() == Piece::Color::EMPTY &&
+				_moving_piece.GetTypeOfColor(_game.GetPlayerColor()) == Piece::Type::PAWN &&
+				_moving_piece_origin.GetColumn() != _mouse_position.GetColumn()) {
+
+			// this was an en passant move
+			Piece original = _display[{ _moving_piece_origin.GetRow(), _mouse_position.GetColumn() }];
+			_display[{ _moving_piece_origin.GetRow(), _mouse_position.GetColumn() }] = Piece();
+
+			if (original.GetColor() == Piece::Color::UNION) {
+				_display[_mouse_position] = original;
+				_moving_piece = _display[_mouse_position].MakeUnionWith(_moving_piece);
+				_moving_piece_origin = _mouse_position;
+				_possible_moves = _display.CalculatePossibleMoves(_moving_piece_origin, _moving_piece, _game.GetPlayerColor(), _game.GetMoveData());
+				return;
+			} else {
+				_game.MakeMove(_current_move);
+			}
 		} else {
-			_game.MakeMove(_current_move);
+			if (_game.GetBoard()[_mouse_position].GetColor() == Piece::Color::UNION) {
+				_moving_piece = _display[_mouse_position].MakeUnionWith(_moving_piece);
+				_moving_piece_origin = _mouse_position;
+				_possible_moves = _display.CalculatePossibleMoves(_moving_piece_origin, _moving_piece, _game.GetPlayerColor(), _game.GetMoveData());
+				return;
+			} else {
+				_game.MakeMove(_current_move);
+			}
 		}
 	}
 

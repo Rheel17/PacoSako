@@ -16,6 +16,8 @@ public:
 
 	void AddPosition(BoardPosition position);
 
+	const std::vector<BoardPosition>& GetPositions() const;
+
 	void PerformOn(Board& board) const;
 
 	friend std::ostream& operator<<(std::ostream& out, const Move& move);

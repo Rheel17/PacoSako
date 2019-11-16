@@ -5,44 +5,6 @@
 
 namespace ps {
 
-BoardPosition::BoardPosition(int row, int column) :
-		_row(row), _column(column) {}
-
-BoardPosition::BoardPosition(const char* name) :
-		_row(name[1] - '1'), _column(name[0] - 'a') {}
-
-BoardPosition::BoardPosition(std::string name) :
-		_row(name[1] - '1'), _column(name[0] - 'a') {}
-
-int BoardPosition::GetRow() const {
-	return _row;
-}
-
-int BoardPosition::GetColumn() const {
-	return _column;
-}
-
-std::string BoardPosition::GetName() const {
-	if (IsValid()) {
-		const char name[3] = { char(_column + 'a'), char(_row + '1'), 0 };
-		return std::string(name);
-	} else {
-		return "invalid";
-	}
-}
-
-bool BoardPosition::IsValid() const {
-	return _row >= 0 && _row < 8 && _column >= 0 && _column < 8;
-}
-
-bool BoardPosition::operator==(const BoardPosition& bp) const {
-	return _row == bp._row && _column == bp._column;
-}
-
-bool BoardPosition::operator!=(const BoardPosition& bp) const {
-	return _row != bp._row || _column != bp._column;
-}
-
 Board::Board() {
 	Board& b = *this;
 
@@ -91,18 +53,18 @@ Piece& Board::operator[](const BoardPosition& position) {
 	return _squares[position.GetRow()][position.GetColumn()];
 }
 
-std::vector<BoardPosition> Board::CalculatePossibleMoves(const BoardPosition &piece, Piece::Color playerColor) const {
-	return CalculatePossibleMoves(piece, GetPiece(piece), playerColor);
+std::vector<BoardPosition> Board::CalculatePossibleMoves(const BoardPosition &piece, Piece::Color playerColor, const GameMoveData& moveData) const {
+	return CalculatePossibleMoves(piece, GetPiece(piece), playerColor, moveData);
 }
 
-std::vector<BoardPosition> Board::CalculatePossibleMoves(const BoardPosition& origin, const Piece& piece, Piece::Color playerColor) const {
+std::vector<BoardPosition> Board::CalculatePossibleMoves(const BoardPosition& origin, const Piece& piece, Piece::Color playerColor, const GameMoveData& moveData) const {
 	std::vector<BoardPosition> vec;
 	Piece::Type type = piece.GetTypeOfColor(playerColor);
 
 	switch (type) {
 		case Piece::Type::NONE: break;
 		case Piece::Type::PAWN:
-			_AddPawnMoves(origin, piece, playerColor, vec);
+			_AddPawnMoves(origin, piece, playerColor, vec, moveData);
 			break;
 		case Piece::Type::ROOK:
 			_AddStraightMoves(origin, piece, playerColor, vec);
@@ -118,14 +80,14 @@ std::vector<BoardPosition> Board::CalculatePossibleMoves(const BoardPosition& or
 			_AddDiagonalMoves(origin, piece, playerColor, vec);
 			break;
 		case Piece::Type::KING:
-			_AddKingMoves(origin, piece, playerColor, vec);
+			_AddKingMoves(origin, piece, playerColor, vec, moveData);
 			break;
 	}
 
 	return vec;
 }
 
-void Board::_AddPawnMoves(const BoardPosition &position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition> &vec) const {
+void Board::_AddPawnMoves(const BoardPosition &position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition> &vec, const GameMoveData& moveData) const {
 	int startingRow = playerColor == Piece::Color::WHITE ? 0 : 7;
 	int forward = playerColor == Piece::Color::WHITE ? 1 : -1;
 
@@ -145,6 +107,16 @@ void Board::_AddPawnMoves(const BoardPosition &position, const Piece& piece, Pie
 			Piece::Color color = GetPiece(diagRight).GetColor();
 			if (!(color == playerColor || color == Piece::Color::EMPTY)) {
 				vec.push_back(diagRight);
+			}
+		}
+
+		// handle en passant cases
+		if (moveData.en_passant_position.IsValid()) {
+			if (moveData.en_passant_position.GetRow() == position.GetRow() &&
+					abs(moveData.en_passant_position.GetColumn() - position.GetColumn()) == 1) {
+
+				vec.push_back({ moveData.en_passant_position.GetRow() + forward,
+					moveData.en_passant_position.GetColumn() });
 			}
 		}
 	}
@@ -192,7 +164,7 @@ void Board::_AddKnightMoves(const BoardPosition& position, const Piece& piece, P
 	}
 }
 
-void Board::_AddKingMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec) const {
+void Board::_AddKingMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec, const GameMoveData& moveData) const {
 	for (int dc = -1; dc <= 1; dc++) {
 		for (int dr = -1; dr <= 1; dr++) {
 			int r = position.GetRow() + dr;
