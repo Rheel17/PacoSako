@@ -28,6 +28,8 @@ public:
     void MouseMotionEvent(wxMouseEvent& evt);
 
 private:
+    int _Row(int r) const;
+
 	void _Redraw();
 	void _Draw(wxGraphicsContext *gc);
 	void _DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble boardPosition);

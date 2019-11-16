@@ -20,6 +20,8 @@ BEGIN_EVENT_TABLE(BoardView, wxPanel)
 	EVT_MOTION(BoardView::MouseMotionEvent)
 END_EVENT_TABLE()
 
+// TODO: reverse black-white position on board rotation (not 7-r) (macro?)
+
 BoardView::BoardView(wxWindow *parent, Game& game) :
 		wxWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_SUNKEN),
 		_game(game) {
@@ -77,7 +79,7 @@ void BoardView::MouseLeftDownEvent(wxMouseEvent& evt) {
 
 	if (_mouse_point.m_x > 0 && _mouse_point.m_x < 8) {
 		int x = int(_mouse_point.m_x);
-		int y = 7 - int(_mouse_point.m_y);
+		int y = _Row(int(_mouse_point.m_y));
 
 		_moving_piece_origin = { y, x };
 		const Piece& draggingPiece = _game.GetBoard()[_moving_piece_origin];
@@ -117,7 +119,7 @@ void BoardView::MouseMotionEvent(wxMouseEvent& evt) {
 			(evt.m_y - (size.y - 8.0 * _TILE_SIZE) / 2.0) / _TILE_SIZE
 	};
 	_mouse_position = {
-			7 - int(_mouse_point.m_y),
+			_Row(int(_mouse_point.m_y)),
 			int(_mouse_point.m_x)
 	};
 
@@ -126,6 +128,14 @@ void BoardView::MouseMotionEvent(wxMouseEvent& evt) {
 	}
 
 	_Redraw();
+}
+
+int BoardView::_Row(int r) const {
+	if (_rotated) {
+		return r;
+	} else {
+		return 7 - r;
+	}
 }
 
 void BoardView::_Redraw() {
@@ -163,7 +173,7 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 		gc->SetBrush(*_brush_tile_origin);
 		gc->DrawRectangle(
 						_TILE_SIZE * _moving_piece_origin.GetColumn(),
-						_TILE_SIZE * (7 - _moving_piece_origin.GetRow()),
+						_TILE_SIZE * _Row(_moving_piece_origin.GetRow()),
 						_TILE_SIZE, _TILE_SIZE);
 	}
 
@@ -174,12 +184,12 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 		if (move == _mouse_position) {
 			gc->DrawRectangle(
 				_TILE_SIZE * _mouse_position.GetColumn(),
-				_TILE_SIZE * (7 - _mouse_position.GetRow()),
+				_TILE_SIZE * _Row(_mouse_position.GetRow()),
 				_TILE_SIZE, _TILE_SIZE);
 		} else {
 			gc->DrawEllipse(
 				_TILE_SIZE * move.GetColumn() + _TILE_SIZE / 2.0 - 11.0,
-				_TILE_SIZE * (7 - move.GetRow()) + _TILE_SIZE / 2.0 - 11.0,
+				_TILE_SIZE * _Row(move.GetRow()) + _TILE_SIZE / 2.0 - 11.0,
 				22.0, 22.0);
 		}
 	}
@@ -187,7 +197,7 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 	// draw the pieces
 	for (int x = 0; x < 8; x++) {
 		for (int y = 0; y < 8; y++) {
-			_DrawPiece(gc, _display[{ 7 - y, x }], { wxDouble(x), wxDouble(y) });
+			_DrawPiece(gc, _display[{ _Row(y), x }], { wxDouble(x), wxDouble(y) });
 		}
 	}
 
