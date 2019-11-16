@@ -48,7 +48,8 @@ void Game::MakeMove(const Move& move) {
 	_move_data.en_passant_position = { -1, -1 };
 	move.PerformOn(*_board);
 
-	if (const auto& positions = move.GetPositions(); positions.size() >= 2) {
+	const auto& positions = move.GetPositions();
+	if (positions.size() >= 2) {
 		const BoardPosition& prev = *(positions.end() - 2);
 		const BoardPosition& next = positions.back();
 
@@ -59,6 +60,42 @@ void Game::MakeMove(const Move& move) {
 		}
 	}
 
+	if (positions.size() == 2) {
+		if (_board->GetPiece(positions.back()).GetTypeOfColor(_player_color) == Piece::Type::KING) {
+			// the player just moved the king
+			switch (_player_color) {
+				case Piece::Color::WHITE:
+					_move_data.can_white_castle_king_side = false;
+					_move_data.can_white_castle_queen_side = false;
+					break;
+				case Piece::Color::BLACK:
+					_move_data.can_black_castle_king_side = false;
+					_move_data.can_black_castle_queen_side = false;
+					break;
+				default:
+					abort();
+			}
+		}
+	}
+
+	// check if the rooks moved
+	int row = _player_color == Piece::Color::WHITE ? 0 : 7;
+	bool *kingSide = _player_color == Piece::Color::WHITE ?
+			&_move_data.can_white_castle_king_side : &_move_data.can_black_castle_king_side;
+	bool *queenSide = _player_color == Piece::Color::WHITE ?
+			&_move_data.can_white_castle_queen_side : &_move_data.can_black_castle_queen_side;
+
+	if (*kingSide || *queenSide) {
+		for (const auto& position : positions) {
+			if (position == BoardPosition { row, 7 }) {
+				*kingSide = false;
+			} else if (position == BoardPosition { row, 0 }) {
+				*queenSide = false;
+			}
+		}
+	}
+
+	// next player
 	SwitchPlayerColor();
 }
 
