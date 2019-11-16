@@ -37,7 +37,8 @@ BoardView::BoardView(wxWindow *parent, Game& game) :
 			"icon_under_left_white", "icon_under_left_black",
 			"icon_under_right_white", "icon_under_right_black",
 			"icon_under_union_wb", "icon_under_union_bw",
-			"icon_head_pawn"
+			"icon_head_pawn_left_white", "icon_head_pawn_left_black",
+			"icon_head_pawn_right_white", "icon_head_pawn_right_black"
 	};
 
 	for (const auto& file : files) {
@@ -195,29 +196,80 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 }
 
 void BoardView::_DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble boardPosition) {
-	std::string typeString;
+	std::string postString;
+	std::string whitePart;
+	std::string blackPart;
 	int translate = 0;
 
 	if (_rotated) {
+		whitePart = "_left_white";
+		blackPart = "_right_black";
+
 		switch (piece.GetColor()) {
 			case Piece::Color::EMPTY: return;
-			case Piece::Color::WHITE: typeString = "_left_white"; break;
-			case Piece::Color::BLACK: typeString = "_right_black"; break;
-			case Piece::Color::UNION: typeString = "_union_wb"; break;
+			case Piece::Color::WHITE: postString = whitePart; break;
+			case Piece::Color::BLACK: postString = blackPart; break;
+			case Piece::Color::UNION: postString = "_union_wb"; break;
 		}
 	} else {
+		whitePart = "_right_white";
+		blackPart = "_left_black";
+
 		switch (piece.GetColor()) {
 			case Piece::Color::EMPTY: return;
-			case Piece::Color::WHITE: typeString = "_right_white"; break;
-			case Piece::Color::BLACK: typeString = "_left_black"; break;
-			case Piece::Color::UNION: typeString = "_union_bw"; break;
+			case Piece::Color::WHITE: postString = whitePart; break;
+			case Piece::Color::BLACK: postString = blackPart; break;
+			case Piece::Color::UNION: postString = "_union_bw"; break;
 		}
 	}
 
-	gc->DrawBitmap(_bitmaps["icon_under" + typeString],
+	gc->DrawBitmap(_bitmaps["icon_under" + postString],
 			_TILE_SIZE * boardPosition.m_x + translate,
 			_TILE_SIZE * boardPosition.m_y,
 			_TILE_SIZE, _TILE_SIZE);
+
+	std::string typeString;
+
+	switch (piece.GetWhiteType()) {
+		case Piece::Type::NONE: goto black; break;
+		case Piece::Type::PAWN: typeString = "icon_head_pawn"; break;
+		case Piece::Type::ROOK: typeString = "icon_head_rook"; break;
+		case Piece::Type::KNIGHT: typeString = "icon_head_knight"; break;
+		case Piece::Type::BISHOP: typeString = "icon_head_bishop"; break;
+		case Piece::Type::QUEEN: typeString = "icon_head_queen"; break;
+		case Piece::Type::KING: typeString = "icon_head_king"; break;
+	}
+
+	{
+		std::string bitmapFile = typeString + whitePart;
+		if (auto iter = _bitmaps.find(bitmapFile); iter != _bitmaps.end()) {
+			gc->DrawBitmap(iter->second,
+					_TILE_SIZE * boardPosition.m_x + translate,
+					_TILE_SIZE * boardPosition.m_y,
+					_TILE_SIZE, _TILE_SIZE);
+		}
+	}
+
+	black:
+	switch (piece.GetBlackType()) {
+		case Piece::Type::NONE: return;
+		case Piece::Type::PAWN: typeString = "icon_head_pawn"; break;
+		case Piece::Type::ROOK: typeString = "icon_head_rook"; break;
+		case Piece::Type::KNIGHT: typeString = "icon_head_knight"; break;
+		case Piece::Type::BISHOP: typeString = "icon_head_bishop"; break;
+		case Piece::Type::QUEEN: typeString = "icon_head_queen"; break;
+		case Piece::Type::KING: typeString = "icon_head_king"; break;
+	}
+
+	{
+		std::string bitmapFile = typeString + blackPart;
+		if (auto iter = _bitmaps.find(bitmapFile); iter != _bitmaps.end()) {
+			gc->DrawBitmap(iter->second,
+					_TILE_SIZE * boardPosition.m_x + translate,
+					_TILE_SIZE * boardPosition.m_y,
+					_TILE_SIZE, _TILE_SIZE);
+		}
+	}
 }
 
 void BoardView::_PutDown() {

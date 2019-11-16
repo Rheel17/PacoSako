@@ -14,11 +14,11 @@
    viewBox="0 0 100 100"
    version="1.1"
    id="svg8"
-   inkscape:version="0.92.3 (2405546, 2018-03-11)"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
    sodipodi:docname="icon_head_pawn.svg"
-   inkscape:export-filename="D:\Eclipse Projects\PacoSako\PacoSako\Resources\icon_head_pawn.png"
-   inkscape:export-xdpi="18.290001"
-   inkscape:export-ydpi="18.290001">
+   inkscape:export-filename="D:\Eclipse Projects\PacoSako\PacoSako\Resources\icon_under_left_white.png"
+   inkscape:export-xdpi="18.288"
+   inkscape:export-ydpi="18.288">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -28,17 +28,17 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="8"
-     inkscape:cx="112.13623"
-     inkscape:cy="267.43506"
+     inkscape:zoom="2"
+     inkscape:cx="116.54597"
+     inkscape:cy="185.13298"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
-     showgrid="false"
+     showgrid="true"
      inkscape:window-width="1920"
-     inkscape:window-height="1057"
-     inkscape:window-x="-30080"
-     inkscape:window-y="-32000"
-     inkscape:window-maximized="0"
+     inkscape:window-height="1017"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
      gridtolerance="15">
     <inkscape:grid
        type="xygrid"
@@ -64,11 +64,11 @@
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(0,-197)">
-    <path
-       style="opacity:1;fill:#ffffff;fill-opacity:0.98994978;stroke:#000000;stroke-width:1.5;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 45.743177,227.9175 c -1e-6,7.05201 -5.716787,12.7688 -12.7688,12.7688 -7.052014,0 -12.7688,-5.71679 -12.768801,-12.7688 -5e-6,-7.05202 5.716783,-12.76881 12.768801,-12.76881 7.052017,0 12.768805,5.71679 12.7688,12.76881 z"
-       id="path24"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="sssss" />
+    <circle
+       id="path3727"
+       cx="34.401562"
+       cy="234.312"
+       r="13.210938"
+       style="fill:#fbffff;fill-opacity:1;stroke:#000000;stroke-width:3;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
   </g>
 </svg>
