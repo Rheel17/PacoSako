@@ -10,22 +10,22 @@ Board::Board() {
 
 	// white pieces
 	b["a1"] = Piece(Piece::Type::ROOK, Piece::Type::NONE);
-//	b["b1"] = Piece(Piece::Type::KNIGHT, Piece::Type::NONE);
-//	b["c1"] = Piece(Piece::Type::BISHOP, Piece::Type::NONE);
-//	b["d1"] = Piece(Piece::Type::QUEEN, Piece::Type::NONE);
+	b["b1"] = Piece(Piece::Type::KNIGHT, Piece::Type::NONE);
+	b["c1"] = Piece(Piece::Type::BISHOP, Piece::Type::NONE);
+	b["d1"] = Piece(Piece::Type::QUEEN, Piece::Type::NONE);
 	b["e1"] = Piece(Piece::Type::KING, Piece::Type::NONE);
-//	b["f1"] = Piece(Piece::Type::BISHOP, Piece::Type::NONE);
-//	b["g1"] = Piece(Piece::Type::KNIGHT, Piece::Type::NONE);
+	b["f1"] = Piece(Piece::Type::BISHOP, Piece::Type::NONE);
+	b["g1"] = Piece(Piece::Type::KNIGHT, Piece::Type::NONE);
 	b["h1"] = Piece(Piece::Type::ROOK, Piece::Type::NONE);
 
 	// black pieces
 	b["a8"] = Piece(Piece::Type::NONE, Piece::Type::ROOK);
-//	b["b8"] = Piece(Piece::Type::NONE, Piece::Type::KNIGHT);
-//	b["c8"] = Piece(Piece::Type::NONE, Piece::Type::BISHOP);
-//	b["d8"] = Piece(Piece::Type::NONE, Piece::Type::QUEEN);
+	b["b8"] = Piece(Piece::Type::NONE, Piece::Type::KNIGHT);
+	b["c8"] = Piece(Piece::Type::NONE, Piece::Type::BISHOP);
+	b["d8"] = Piece(Piece::Type::NONE, Piece::Type::QUEEN);
 	b["e8"] = Piece(Piece::Type::NONE, Piece::Type::KING);
-//	b["f8"] = Piece(Piece::Type::NONE, Piece::Type::BISHOP);
-//	b["g8"] = Piece(Piece::Type::NONE, Piece::Type::KNIGHT);
+	b["f8"] = Piece(Piece::Type::NONE, Piece::Type::BISHOP);
+	b["g8"] = Piece(Piece::Type::NONE, Piece::Type::KNIGHT);
 	b["h8"] = Piece(Piece::Type::NONE, Piece::Type::ROOK);
 
 	for (unsigned i = 0; i < 8; i++) {
