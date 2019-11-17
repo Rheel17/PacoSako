@@ -215,11 +215,11 @@ void Board::_AddKingMoves(const BoardPosition& position, const Piece& piece, Pie
 		}
 	}
 
-	switch (playerColor) {
-		// TODO: check if king is under sako, or moves through or towards a
-		// protected square
-		const auto& moves = _GetAllPossibleMoves(false);
+	// TODO: check if king is under sako, or moves through or towards a
+	// protected square
+	const auto& moves = _GetAllPossibleMoves(false);
 
+	switch (playerColor) {
 		case Piece::Color::WHITE:
 			if (moveData.can_white_castle_king_side &&
 					GetPiece({ 0, 5 }).GetColor() == Piece::Color::EMPTY &&
