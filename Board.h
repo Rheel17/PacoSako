@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Levi van Rheenen. All rights reserved.
+ * Copyright Â© 2019 Levi van Rheenen. All rights reserved.
  */
 #ifndef BOARD_H_
 #define BOARD_H_

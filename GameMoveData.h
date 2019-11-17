@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Levi van Rheenen. All rights reserved.
+ * Copyright Â© 2019 Levi van Rheenen. All rights reserved.
  */
 #ifndef GAMEMOVEDATA_H_
 #define GAMEMOVEDATA_H_
