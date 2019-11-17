@@ -34,6 +34,7 @@ BoardView::BoardView(wxWindow *parent, Game& game) :
 
 	std::vector<std::string> files = {
 			"board_standard", "board_rotated",
+
 			"icon_under_left_white", "icon_under_left_black",
 			"icon_under_right_white", "icon_under_right_black",
 			"icon_under_union_wb", "icon_under_union_bw",
@@ -46,6 +47,9 @@ BoardView::BoardView(wxWindow *parent, Game& game) :
 
 			"icon_head_bishop_left_white", "icon_head_bishop_left_black",
 			"icon_head_bishop_right_white", "icon_head_bishop_right_black",
+
+			"icon_head_queen_left_white", "icon_head_queen_left_black",
+			"icon_head_queen_right_white", "icon_head_queen_right_black",
 
 			"icon_head_king_left_white", "icon_head_king_left_black",
 			"icon_head_king_right_white", "icon_head_king_right_black",
