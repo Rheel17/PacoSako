@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Levi van Rheenen. All rights reserved.
+ * Copyright ï¿½ 2019 Levi van Rheenen. All rights reserved.
  */
 #include "Board.h"
 
@@ -8,32 +8,60 @@ namespace ps {
 Board::Board() {
 	Board& b = *this;
 
-	// white pieces
+//	// white pieces
+//	b["a1"] = Piece(Piece::Type::ROOK, Piece::Type::NONE);
+//	b["b1"] = Piece(Piece::Type::KNIGHT, Piece::Type::NONE);
+//	b["c1"] = Piece(Piece::Type::BISHOP, Piece::Type::NONE);
+//	b["d1"] = Piece(Piece::Type::QUEEN, Piece::Type::NONE);
+//	b["e1"] = Piece(Piece::Type::KING, Piece::Type::NONE);
+//	b["f1"] = Piece(Piece::Type::BISHOP, Piece::Type::NONE);
+//	b["g1"] = Piece(Piece::Type::KNIGHT, Piece::Type::NONE);
+//	b["h1"] = Piece(Piece::Type::ROOK, Piece::Type::NONE);
+//
+//	// black pieces
+//	b["a8"] = Piece(Piece::Type::NONE, Piece::Type::ROOK);
+//	b["b8"] = Piece(Piece::Type::NONE, Piece::Type::KNIGHT);
+//	b["c8"] = Piece(Piece::Type::NONE, Piece::Type::BISHOP);
+//	b["d8"] = Piece(Piece::Type::NONE, Piece::Type::QUEEN);
+//	b["e8"] = Piece(Piece::Type::NONE, Piece::Type::KING);
+//	b["f8"] = Piece(Piece::Type::NONE, Piece::Type::BISHOP);
+//	b["g8"] = Piece(Piece::Type::NONE, Piece::Type::KNIGHT);
+//	b["h8"] = Piece(Piece::Type::NONE, Piece::Type::ROOK);
+//
+//	for (unsigned i = 0; i < 8; i++) {
+//		// a2-z2 (white pawns)
+//		_squares[1][i] = Piece(Piece::Type::PAWN, Piece::Type::NONE);
+//
+//		// a7-z7 (black pawns)
+//		_squares[6][i] = Piece(Piece::Type::NONE, Piece::Type::PAWN);
+//	}
+
+	// Setup for sako-check
 	b["a1"] = Piece(Piece::Type::ROOK, Piece::Type::NONE);
-	b["b1"] = Piece(Piece::Type::KNIGHT, Piece::Type::NONE);
 	b["c1"] = Piece(Piece::Type::BISHOP, Piece::Type::NONE);
 	b["d1"] = Piece(Piece::Type::QUEEN, Piece::Type::NONE);
 	b["e1"] = Piece(Piece::Type::KING, Piece::Type::NONE);
 	b["f1"] = Piece(Piece::Type::BISHOP, Piece::Type::NONE);
-	b["g1"] = Piece(Piece::Type::KNIGHT, Piece::Type::NONE);
 	b["h1"] = Piece(Piece::Type::ROOK, Piece::Type::NONE);
-
-	// black pieces
 	b["a8"] = Piece(Piece::Type::NONE, Piece::Type::ROOK);
 	b["b8"] = Piece(Piece::Type::NONE, Piece::Type::KNIGHT);
 	b["c8"] = Piece(Piece::Type::NONE, Piece::Type::BISHOP);
 	b["d8"] = Piece(Piece::Type::NONE, Piece::Type::QUEEN);
-	b["e8"] = Piece(Piece::Type::NONE, Piece::Type::KING);
 	b["f8"] = Piece(Piece::Type::NONE, Piece::Type::BISHOP);
-	b["g8"] = Piece(Piece::Type::NONE, Piece::Type::KNIGHT);
-	b["h8"] = Piece(Piece::Type::NONE, Piece::Type::ROOK);
+	b["g8"] = Piece(Piece::Type::NONE, Piece::Type::ROOK);
+
+	b["b4"] = Piece(Piece::Type::NONE, Piece::Type::KING);
+	b["e4"] = Piece(Piece::Type::KNIGHT, Piece::Type::KNIGHT);
+	b["c3"] = Piece(Piece::Type::KNIGHT, Piece::Type::PAWN);
 
 	for (unsigned i = 0; i < 8; i++) {
 		// a2-z2 (white pawns)
 		_squares[1][i] = Piece(Piece::Type::PAWN, Piece::Type::NONE);
 
 		// a7-z7 (black pawns)
-		_squares[6][i] = Piece(Piece::Type::NONE, Piece::Type::PAWN);
+		if (i != 3) {
+			_squares[6][i] = Piece(Piece::Type::NONE, Piece::Type::PAWN);
+		}
 	}
 }
 
@@ -51,6 +79,10 @@ const Piece& Board::operator[](const BoardPosition& position) const {
 
 Piece& Board::operator[](const BoardPosition& position) {
 	return _squares[position.GetRow()][position.GetColumn()];
+}
+
+std::vector<Move> Board::GetAllPossibleMoves() const {
+	return _GetAllPossibleMoves(true);
 }
 
 std::vector<BoardPosition> Board::CalculatePossibleMoves(const BoardPosition &piece, Piece::Color playerColor, const GameMoveData& moveData) const {
@@ -186,6 +218,7 @@ void Board::_AddKingMoves(const BoardPosition& position, const Piece& piece, Pie
 	switch (playerColor) {
 		// TODO: check if king is under sako, or moves through or towards a
 		// protected square
+		const auto& moves = _GetAllPossibleMoves(false);
 
 		case Piece::Color::WHITE:
 			if (moveData.can_white_castle_king_side &&
@@ -264,6 +297,14 @@ void Board::_AddMoves(const BoardPosition& position, const Piece& piece, Piece::
 			}
 		}
 	}
+}
+
+std::vector<Move> Board::_GetAllPossibleMoves(bool checkSako) const {
+
+}
+
+void Board::_AddAllPossibleMoves(const BoardPosition& position, const Piece& piece, std::vector<Move>& moves) {
+
 }
 
 }

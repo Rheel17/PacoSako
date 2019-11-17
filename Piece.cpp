@@ -5,6 +5,8 @@
 
 #include <cassert>
 
+#include "Board.h"
+
 namespace ps {
 
 Piece::Piece() :

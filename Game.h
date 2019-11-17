@@ -8,7 +8,7 @@
 
 #include <memory>
 
-#include "Move.h"
+#include "Board.h"
 #include "GameMoveData.h"
 
 namespace ps {

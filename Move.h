@@ -4,9 +4,14 @@
 #ifndef MOVE_H_
 #define MOVE_H_
 
-#include "Board.h"
+#include "BoardPosition.h"
+#include "Piece.h"
+
+#include <vector>
 
 namespace ps {
+
+class Board;
 
 class Move {
 

@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "Game.h"
+#include "Board.h"
 
 namespace ps {
 

@@ -5,6 +5,8 @@
 
 #include <cassert>
 
+#include "Board.h"
+
 namespace ps {
 
 Move::Move(BoardPosition startMove) {

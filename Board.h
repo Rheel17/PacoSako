@@ -6,6 +6,7 @@
 
 #include "GameMoveData.h"
 #include "Piece.h"
+#include "Move.h"
 
 #include <array>
 #include <vector>
@@ -23,6 +24,7 @@ public:
 	const Piece& operator[](const BoardPosition& position) const;
 	Piece& operator[](const BoardPosition& position);
 
+	std::vector<Move> GetAllPossibleMoves() const;
 	std::vector<BoardPosition> CalculatePossibleMoves(const BoardPosition& piece, Piece::Color playerColor, const GameMoveData& moveData) const;
 	std::vector<BoardPosition> CalculatePossibleMoves(const BoardPosition& origin, const Piece& piece, Piece::Color playerColor, const GameMoveData& moveData) const;
 
@@ -33,6 +35,9 @@ private:
 	void _AddDiagonalMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec) const;
 	void _AddStraightMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec) const;
 	void _AddMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec, std::array<BoardPosition, 4> dps) const;
+
+	std::vector<Move> _GetAllPossibleMoves(bool checkSako) const;
+	void _AddAllPossibleMoves(const BoardPosition& position, const Piece& piece, std::vector<Move>& moves);
 
 	Piece _squares[8][8] {};
 
