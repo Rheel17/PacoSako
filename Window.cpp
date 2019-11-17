@@ -45,6 +45,9 @@ BoardView::BoardView(wxWindow *parent, Game& game) :
 			"icon_head_rook_left_white", "icon_head_rook_left_black",
 			"icon_head_rook_right_white", "icon_head_rook_right_black",
 
+			"icon_head_knight_left_white", "icon_head_knight_left_black",
+			"icon_head_knight_right_white", "icon_head_knight_right_black",
+
 			"icon_head_bishop_left_white", "icon_head_bishop_left_black",
 			"icon_head_bishop_right_white", "icon_head_bishop_right_black",
 
