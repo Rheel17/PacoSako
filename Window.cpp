@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Levi van Rheenen. All rights reserved.
+ * Copyright ï¿½ 2019 Levi van Rheenen. All rights reserved.
  */
 #include "Window.h"
 
@@ -37,8 +37,18 @@ BoardView::BoardView(wxWindow *parent, Game& game) :
 			"icon_under_left_white", "icon_under_left_black",
 			"icon_under_right_white", "icon_under_right_black",
 			"icon_under_union_wb", "icon_under_union_bw",
+
 			"icon_head_pawn_left_white", "icon_head_pawn_left_black",
-			"icon_head_pawn_right_white", "icon_head_pawn_right_black"
+			"icon_head_pawn_right_white", "icon_head_pawn_right_black",
+
+			"icon_head_rook_left_white", "icon_head_rook_left_black",
+			"icon_head_rook_right_white", "icon_head_rook_right_black",
+
+			"icon_head_bishop_left_white", "icon_head_bishop_left_black",
+			"icon_head_bishop_right_white", "icon_head_bishop_right_black",
+
+			"icon_head_king_left_white", "icon_head_king_left_black",
+			"icon_head_king_right_white", "icon_head_king_right_black",
 	};
 
 	for (const auto& file : files) {
