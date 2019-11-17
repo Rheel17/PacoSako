@@ -34,26 +34,19 @@ BoardView::BoardView(wxWindow *parent, Game& game) :
 
 	std::vector<std::string> files = {
 			"board_standard", "board_rotated",
-
 			"icon_under_left_white", "icon_under_left_black",
 			"icon_under_right_white", "icon_under_right_black",
 			"icon_under_union_wb", "icon_under_union_bw",
-
 			"icon_head_pawn_left_white", "icon_head_pawn_left_black",
 			"icon_head_pawn_right_white", "icon_head_pawn_right_black",
-
 			"icon_head_rook_left_white", "icon_head_rook_left_black",
 			"icon_head_rook_right_white", "icon_head_rook_right_black",
-
 			"icon_head_knight_left_white", "icon_head_knight_left_black",
 			"icon_head_knight_right_white", "icon_head_knight_right_black",
-
 			"icon_head_bishop_left_white", "icon_head_bishop_left_black",
 			"icon_head_bishop_right_white", "icon_head_bishop_right_black",
-
 			"icon_head_queen_left_white", "icon_head_queen_left_black",
 			"icon_head_queen_right_white", "icon_head_queen_right_black",
-
 			"icon_head_king_left_white", "icon_head_king_left_black",
 			"icon_head_king_right_white", "icon_head_king_right_black",
 	};
@@ -232,8 +225,8 @@ void BoardView::_DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble b
 
 		switch (piece.GetColor()) {
 			case Piece::Color::EMPTY: return;
-			case Piece::Color::WHITE: postString = whitePart; break;
-			case Piece::Color::BLACK: postString = blackPart; break;
+			case Piece::Color::WHITE: postString = whitePart; translate =  8; break;
+			case Piece::Color::BLACK: postString = blackPart; translate = -8; break;
 			case Piece::Color::UNION: postString = "_union_wb"; break;
 		}
 	} else {
@@ -242,8 +235,8 @@ void BoardView::_DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble b
 
 		switch (piece.GetColor()) {
 			case Piece::Color::EMPTY: return;
-			case Piece::Color::WHITE: postString = whitePart; break;
-			case Piece::Color::BLACK: postString = blackPart; break;
+			case Piece::Color::WHITE: postString = whitePart; translate = -8; break;
+			case Piece::Color::BLACK: postString = blackPart; translate =  8; break;
 			case Piece::Color::UNION: postString = "_union_bw"; break;
 		}
 	}
