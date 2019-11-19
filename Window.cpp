@@ -107,7 +107,7 @@ void BoardView::MouseLeftDownEvent(wxMouseEvent& evt) {
 	// square with a piece
 	if (_mouse_point.m_x > 0 && _mouse_point.m_x < 8) {
 		// get the x, y position on the board
-		int x = int(_mouse_point.m_x);
+		int x = _Col(int(_mouse_point.m_x));
 		int y = _Row(int(_mouse_point.m_y));
 
 		// set the piece origin
@@ -154,7 +154,7 @@ void BoardView::MouseMotionEvent(wxMouseEvent& evt) {
 	};
 	_mouse_position = {
 			_Row(int(_mouse_point.m_y)),
-			int(_mouse_point.m_x)
+			_Col(int(_mouse_point.m_x))
 	};
 
 	if (!_is_dragging && _mouse_down && _moving_piece.GetColor() != Piece::Color::EMPTY && _mouse_position != _moving_piece_origin) {
@@ -169,6 +169,14 @@ int BoardView::_Row(int r) const {
 		return r;
 	} else {
 		return 7 - r;
+	}
+}
+
+int BoardView::_Col(int c) const {
+	if (_rotated) {
+		return 7 - c;
+	} else {
+		return c;
 	}
 }
 
@@ -224,7 +232,7 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 	if (_moving_piece.GetColor() != Piece::Color::EMPTY) {
 		gc->SetBrush(*_brush_tile_origin);
 		gc->DrawRectangle(
-						_tile_size * _moving_piece_origin.GetColumn(),
+						_tile_size * _Col(_moving_piece_origin.GetColumn()),
 						_tile_size * _Row(_moving_piece_origin.GetRow()),
 						_tile_size, _tile_size);
 	}
@@ -232,7 +240,7 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 	// draw the pieces
 	for (int x = 0; x < 8; x++) {
 		for (int y = 0; y < 8; y++) {
-			_DrawPiece(gc, _display[{ _Row(y), x }], { wxDouble(x), wxDouble(y) });
+			_DrawPiece(gc, _display[{ _Row(y), _Col(x) }], { wxDouble(x), wxDouble(y) });
 		}
 	}
 
@@ -242,12 +250,12 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 	for (const auto& move : _possible_moves) {
 		if (move == _mouse_position) {
 			gc->DrawRectangle(
-				_tile_size * _mouse_position.GetColumn(),
+				_tile_size * _Col(_mouse_position.GetColumn()),
 				_tile_size * _Row(_mouse_position.GetRow()),
 				_tile_size, _tile_size);
 		} else {
 			gc->DrawEllipse(
-				_tile_size * move.GetColumn() + _tile_size / 2.0 - 11.0,
+				_tile_size * _Col(move.GetColumn()) + _tile_size / 2.0 - 11.0,
 				_tile_size * _Row(move.GetRow()) + _tile_size / 2.0 - 11.0,
 				22.0, 22.0);
 		}

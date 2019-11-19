@@ -30,6 +30,7 @@ public:
 
 private:
     int _Row(int r) const;
+    int _Col(int c) const;
 
 	void _Redraw();
 	void _Draw(wxGraphicsContext *gc);
