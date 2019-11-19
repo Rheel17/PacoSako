@@ -147,11 +147,11 @@ std::vector<Move> Board::GetAllPossibleMoves(Piece::Color color, const GameMoveD
 	return _GetAllPossibleMoves(true, color, moveData);
 }
 
-std::vector<BoardPosition> Board::CalculatePossibleMoves(const BoardPosition &piece, Piece::Color playerColor, const GameMoveData& moveData) const {
-	return CalculatePossibleMoves(piece, GetPiece(piece), playerColor, moveData);
+std::vector<BoardPosition> Board::CalculatePossibleMoves(const BoardPosition &piece, Piece::Color playerColor, const GameMoveData& moveData, bool checkSako) const {
+	return CalculatePossibleMoves(piece, GetPiece(piece), playerColor, moveData, checkSako);
 }
 
-std::vector<BoardPosition> Board::CalculatePossibleMoves(const BoardPosition& origin, const Piece& piece, Piece::Color playerColor, const GameMoveData& moveData) const {
+std::vector<BoardPosition> Board::CalculatePossibleMoves(const BoardPosition& origin, const Piece& piece, Piece::Color playerColor, const GameMoveData& moveData, bool checkSako) const {
 	std::vector<BoardPosition> vec;
 	Piece::Type type = piece.GetTypeOfColor(playerColor);
 
@@ -174,7 +174,7 @@ std::vector<BoardPosition> Board::CalculatePossibleMoves(const BoardPosition& or
 			_AddDiagonalMoves(origin, piece, playerColor, vec);
 			break;
 		case Piece::Type::KING:
-			_AddKingMoves(origin, piece, playerColor, vec, moveData);
+			_AddKingMoves(origin, piece, playerColor, vec, moveData, checkSako);
 			break;
 	}
 
@@ -258,7 +258,7 @@ void Board::_AddKnightMoves(const BoardPosition& position, const Piece& piece, P
 	}
 }
 
-void Board::_AddKingMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec, const GameMoveData& moveData) const {
+void Board::_AddKingMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec, const GameMoveData& moveData, bool checkSako) const {
 	for (int dc = -1; dc <= 1; dc++) {
 		for (int dr = -1; dr <= 1; dr++) {
 			int r = position.GetRow() + dr;
@@ -280,12 +280,18 @@ void Board::_AddKingMoves(const BoardPosition& position, const Piece& piece, Pie
 	bool hasDestinations = false;
 	std::vector<BoardPosition> destinations;
 
-	const auto checkNotProtected = [&hasDestinations, &destinations, playerColor, moveData, this]
+	const auto checkNotProtected = [&hasDestinations, &destinations, playerColor, moveData, checkSako, this]
 									(const BoardPosition& bp) {
+
+		if (!checkSako) {
+			return true;
+		}
+
 		Piece::Color otherColor = opposite(playerColor);
-		auto moves = _GetAllPossibleMoves(false, otherColor, moveData);
 
 		if (!hasDestinations) {
+			auto moves = _GetAllPossibleMoves(false, otherColor, moveData);
+
 			for (const auto& move : moves) {
 				const auto& positions = move.GetPositions();
 
@@ -414,7 +420,7 @@ std::vector<Move> Board::_GetAllPossibleMoves(bool checkSako, Piece::Color color
 						dummy = *this;
 						move.PerformOn(dummy);
 
-						auto dummyMoves = _GetAllPossibleMoves(false, otherColor, moveData);
+						auto dummyMoves = dummy._GetAllPossibleMoves(false, otherColor, moveData);
 						bool sako = false;
 
 						for (const auto& dummyMove : dummyMoves) {
@@ -440,7 +446,7 @@ std::vector<Move> Board::_GetAllPossibleMoves(bool checkSako, Piece::Color color
 }
 
 void Board::_AddAllPossibleMoves(const BoardPosition& position, const Piece& piece, Piece::Color color, std::vector<Move>& moves, const GameMoveData& moveData) const {
-	auto initialMoves = CalculatePossibleMoves(position, piece, color, moveData);
+	auto initialMoves = CalculatePossibleMoves(position, piece, color, moveData, false);
 	for (const auto& move : initialMoves) {
 		if (piece.GetColor() == Piece::Color::UNION ||
 				GetPiece(move).GetColor() == Piece::Color::EMPTY) {
@@ -459,7 +465,7 @@ void Board::_AddAllPossibleChainMoves(Move prefix, const Piece& piece, std::vect
 
 	Board dummy(*this);
 	Piece movingPiece = dummy[position].MakeUnionWith(piece);
-	auto pieceMoves = dummy.CalculatePossibleMoves(position, movingPiece, movingPiece.GetColor(), moveData);
+	auto pieceMoves = dummy.CalculatePossibleMoves(position, movingPiece, movingPiece.GetColor(), moveData, false);
 
 	for (const auto& move : pieceMoves) {
 		if (dummy[move].GetColor() != Piece::Color::UNION) {

@@ -28,13 +28,13 @@ public:
 	Piece& operator[](const BoardPosition& position);
 
 	std::vector<Move> GetAllPossibleMoves(Piece::Color color, const GameMoveData& moveData) const;
-	std::vector<BoardPosition> CalculatePossibleMoves(const BoardPosition& piece, Piece::Color playerColor, const GameMoveData& moveData) const;
-	std::vector<BoardPosition> CalculatePossibleMoves(const BoardPosition& origin, const Piece& piece, Piece::Color playerColor, const GameMoveData& moveData) const;
+	std::vector<BoardPosition> CalculatePossibleMoves(const BoardPosition& piece, Piece::Color playerColor, const GameMoveData& moveData, bool checkSako = true) const;
+	std::vector<BoardPosition> CalculatePossibleMoves(const BoardPosition& origin, const Piece& piece, Piece::Color playerColor, const GameMoveData& moveData, bool checkSako = true) const;
 
 private:
 	void _AddPawnMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec, const GameMoveData& moveData) const;
 	void _AddKnightMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec) const;
-	void _AddKingMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec, const GameMoveData& moveData) const;
+	void _AddKingMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec, const GameMoveData& moveData, bool checkSako) const;
 	void _AddDiagonalMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec) const;
 	void _AddStraightMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec) const;
 	void _AddMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec, std::array<BoardPosition, 4> dps) const;
