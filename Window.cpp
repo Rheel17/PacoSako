@@ -288,8 +288,8 @@ void BoardView::_DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble b
 	}
 
 	gc->DrawBitmap(_bitmaps["icon_under" + postString],
-			_tile_size * boardPosition.m_x + translate,
-			_tile_size * boardPosition.m_y,
+			int(_tile_size * boardPosition.m_x + translate),
+			int(_tile_size * boardPosition.m_y),
 			_tile_size, _tile_size);
 
 	std::string typeString;
@@ -308,8 +308,8 @@ void BoardView::_DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble b
 		std::string bitmapFile = typeString + whitePart;
 		if (auto iter = _bitmaps.find(bitmapFile); iter != _bitmaps.end()) {
 			gc->DrawBitmap(iter->second,
-					_tile_size * boardPosition.m_x + translate,
-					_tile_size * boardPosition.m_y,
+					int(_tile_size * boardPosition.m_x + translate),
+					int(_tile_size * boardPosition.m_y),
 					_tile_size, _tile_size);
 		}
 	}
@@ -329,8 +329,8 @@ void BoardView::_DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble b
 		std::string bitmapFile = typeString + blackPart;
 		if (auto iter = _bitmaps.find(bitmapFile); iter != _bitmaps.end()) {
 			gc->DrawBitmap(iter->second,
-					_tile_size * boardPosition.m_x + translate,
-					_tile_size * boardPosition.m_y,
+					int(_tile_size * boardPosition.m_x + translate),
+					int(_tile_size * boardPosition.m_y),
 					_tile_size, _tile_size);
 		}
 	}
