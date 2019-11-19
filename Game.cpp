@@ -46,10 +46,16 @@ void Game::SwitchPlayerColor() {
 }
 
 void Game::MakeMove(const Move& move) {
+	const auto& positions = move.GetPositions();
+	if (positions.empty()) {
+		return;
+	}
+
+	Piece movingPiece = _board->GetPiece(positions.front());
+
 	_move_data.en_passant_position = { -1, -1 };
 	move.PerformOn(*_board);
 
-	const auto& positions = move.GetPositions();
 	if (positions.size() >= 2) {
 		const BoardPosition& prev = *(positions.end() - 2);
 		const BoardPosition& next = positions.back();
@@ -96,11 +102,22 @@ void Game::MakeMove(const Move& move) {
 		}
 	}
 
+	// check if a non-reversible move was made (only creating a union or pawn
+	// promotion are non-reversable moves in paco sako.
+	// TODO: check for pawn promotion
+	if (positions.size() == 2 && movingPiece.GetColor() != Piece::Color::UNION &&
+			_board->GetPiece(positions.back()).GetColor() == Piece::Color::UNION) {
+
+		_fify_move_rule_count = 0;
+	} else {
+		_fify_move_rule_count++;
+	}
+
 	// next player
 	SwitchPlayerColor();
 
 	if (_player_color == Piece::Color::WHITE) {
-		currentMove++;
+		_current_move++;
 	}
 
 	std::cout << GetPsFEN() << std::endl;
@@ -146,9 +163,9 @@ std::string Game::GetPsFEN() const {
 		boardFEN += "- ";
 	}
 
-	boardFEN += std::to_string(fifyMoveRuleCount);
+	boardFEN += std::to_string(_fify_move_rule_count);
 	boardFEN += ' ';
-	boardFEN += std::to_string(currentMove);
+	boardFEN += std::to_string(_current_move);
 
 	return boardFEN;
 }

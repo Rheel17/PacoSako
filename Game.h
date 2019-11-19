@@ -43,8 +43,8 @@ private:
 	std::unique_ptr<Board> _board;
 	Piece::Color _player_color = Piece::Color::WHITE;
 	GameMoveData _move_data;
-	int fifyMoveRuleCount = 0;
-	int currentMove = 1;
+	int _fify_move_rule_count = 0;
+	int _current_move = 1;
 
 };
 
