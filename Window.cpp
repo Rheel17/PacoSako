@@ -28,9 +28,11 @@ BoardView::BoardView(wxWindow *parent, Game& game) :
 
 	// set widget properties
 	SetDoubleBuffered(true);
-	SetMinSize({ _TILE_SIZE * 9, _TILE_SIZE * 9 });
+	SetMinSize({ _tile_size * 9, _tile_size * 9 });
 
 	// some brush constants
+	_brush_board_dark = std::make_unique<wxBrush>(wxColour(215, 128, 73));
+	_brush_board_light = std::make_unique<wxBrush>(wxColour(241, 202, 163));
 	_brush_tile_origin = std::make_unique<wxBrush>(wxColour(249, 166, 45, 143));
 	_brush_tile_mouseover = std::make_unique<wxBrush>(wxColour(67, 107, 166, 143));
 
@@ -56,18 +58,29 @@ BoardView::BoardView(wxWindow *parent, Game& game) :
 	// load the png files
 	for (const auto& file : files) {
 		wxFileInputStream input("Resources/png/" + file + ".png");
-		wxImage i(input, wxBITMAP_TYPE_PNG);
-		_bitmaps[file] = wxBitmap(i);
+		_images[file] = wxImage(input, wxBITMAP_TYPE_PNG);
 	}
 }
 
 void BoardView::PaintEvent(wxPaintEvent& evt) {
+	auto size = GetClientSize();
+	_tile_size = std::min(size.x, size.y) / 9;
+
+	if (_bitmaps.empty()) {
+		for (const auto& [file, image] : _images) {
+			wxImage scaledImage(image);
+			scaledImage.Rescale(_tile_size, _tile_size, wxIMAGE_QUALITY_HIGH);
+			_bitmaps[file] = scaledImage;
+		}
+	}
+
 	wxPaintDC dc(this);
 	wxGraphicsContext *gc = wxGraphicsContext::Create(dc);
 	_Draw(gc);
 }
 
 void BoardView::SizeEvent(wxSizeEvent& evt) {
+	_bitmaps.clear();
 	_Redraw();
 }
 
@@ -86,8 +99,8 @@ void BoardView::MouseLeftDownEvent(wxMouseEvent& evt) {
 
 	// transform the mouse position to board space
 	_mouse_point = {
-			(evt.m_x - (size.x - 8.0 * _TILE_SIZE) / 2.0) / _TILE_SIZE,
-			(evt.m_y - (size.y - 8.0 * _TILE_SIZE) / 2.0) / _TILE_SIZE
+			(evt.m_x - (size.x - 8.0 * _tile_size) / 2.0) / _tile_size,
+			(evt.m_y - (size.y - 8.0 * _tile_size) / 2.0) / _tile_size
 	};
 
 	// we are not currently holding a piece, so check if the user clicked a
@@ -136,8 +149,8 @@ void BoardView::MouseMotionEvent(wxMouseEvent& evt) {
 	auto size = GetClientSize();
 
 	_mouse_point = {
-			(evt.m_x - (size.x - 8.0 * _TILE_SIZE) / 2.0) / _TILE_SIZE,
-			(evt.m_y - (size.y - 8.0 * _TILE_SIZE) / 2.0) / _TILE_SIZE
+			(evt.m_x - (size.x - 8.0 * _tile_size) / 2.0) / _tile_size,
+			(evt.m_y - (size.y - 8.0 * _tile_size) / 2.0) / _tile_size
 	};
 	_mouse_position = {
 			_Row(int(_mouse_point.m_y)),
@@ -174,31 +187,36 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 	// move the board to the center
 	wxGraphicsMatrix transform = gc->CreateMatrix(
 			1.0, 0.0, 0.0, 1.0,
-			(size.x - 8 * _TILE_SIZE) / 2,
-			(size.y - 8 * _TILE_SIZE) / 2
+			(size.x - 8 * _tile_size) / 2,
+			(size.y - 8 * _tile_size) / 2
 	);
 
 	gc->SetTransform(transform);
 
 	// draw the board
-//	if (_rotated) {
-//		gc->DrawBitmap(_bitmaps["board_rotated"],
-//				0.0, 0.0, 8.0 * _TILE_SIZE, 8.0 * _TILE_SIZE);
-//	} else {
-//		gc->DrawBitmap(_bitmaps["board_standard"],
-//				0.0, 0.0, 8.0 * _TILE_SIZE, 8.0 * _TILE_SIZE);
-//	}
+	gc->SetBrush(*_brush_board_light);
+	gc->DrawRectangle(0.0, 0.0, 8.0 * _tile_size, 8.0 * _tile_size);
+
+	gc->SetBrush(*_brush_board_dark);
+
+	for (int r = 0; r < 8; r++) {
+		for (int c = 0; c < 8; c++) {
+			if ((r + c) % 2) {
+				gc->DrawRectangle(c * _tile_size, r * _tile_size, _tile_size, _tile_size);
+			}
+		}
+	}
 
 	// draw the coordinates
 	gc->SetFont(GetFont(), { 0, 0, 0 });
 
 	for (int i = 0; i < 8; i++) {
 		if (_rotated) {
-			gc->DrawText(wxString(char(i + '1'), 1), -10.0, (i + 0.5) * _TILE_SIZE - 5.0);
-			gc->DrawText(wxString(char('h' - i), 1), (i + 0.5) * _TILE_SIZE - 2.0, 8.0 * _TILE_SIZE + 5.0);
+			gc->DrawText(wxString(char(i + '1'), 1), -10.0, (i + 0.5) * _tile_size - 5.0);
+			gc->DrawText(wxString(char('h' - i), 1), (i + 0.5) * _tile_size - 2.0, 8.0 * _tile_size + 5.0);
 		} else {
-			gc->DrawText(wxString(char('8' - i), 1), -10.0, (i + 0.5) * _TILE_SIZE - 5.0);
-			gc->DrawText(wxString(char(i + 'a'), 1), (i + 0.5) * _TILE_SIZE - 2.0, 8.0 * _TILE_SIZE + 5.0);
+			gc->DrawText(wxString(char('8' - i), 1), -10.0, (i + 0.5) * _tile_size - 5.0);
+			gc->DrawText(wxString(char(i + 'a'), 1), (i + 0.5) * _tile_size - 2.0, 8.0 * _tile_size + 5.0);
 		}
 	}
 
@@ -206,9 +224,9 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 	if (_moving_piece.GetColor() != Piece::Color::EMPTY) {
 		gc->SetBrush(*_brush_tile_origin);
 		gc->DrawRectangle(
-						_TILE_SIZE * _moving_piece_origin.GetColumn(),
-						_TILE_SIZE * _Row(_moving_piece_origin.GetRow()),
-						_TILE_SIZE, _TILE_SIZE);
+						_tile_size * _moving_piece_origin.GetColumn(),
+						_tile_size * _Row(_moving_piece_origin.GetRow()),
+						_tile_size, _tile_size);
 	}
 
 	// draw the pieces
@@ -224,13 +242,13 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 	for (const auto& move : _possible_moves) {
 		if (move == _mouse_position) {
 			gc->DrawRectangle(
-				_TILE_SIZE * _mouse_position.GetColumn(),
-				_TILE_SIZE * _Row(_mouse_position.GetRow()),
-				_TILE_SIZE, _TILE_SIZE);
+				_tile_size * _mouse_position.GetColumn(),
+				_tile_size * _Row(_mouse_position.GetRow()),
+				_tile_size, _tile_size);
 		} else {
 			gc->DrawEllipse(
-				_TILE_SIZE * move.GetColumn() + _TILE_SIZE / 2.0 - 11.0,
-				_TILE_SIZE * _Row(move.GetRow()) + _TILE_SIZE / 2.0 - 11.0,
+				_tile_size * move.GetColumn() + _tile_size / 2.0 - 11.0,
+				_tile_size * _Row(move.GetRow()) + _tile_size / 2.0 - 11.0,
 				22.0, 22.0);
 		}
 	}
@@ -270,9 +288,9 @@ void BoardView::_DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble b
 	}
 
 	gc->DrawBitmap(_bitmaps["icon_under" + postString],
-			_TILE_SIZE * boardPosition.m_x + translate,
-			_TILE_SIZE * boardPosition.m_y,
-			_TILE_SIZE, _TILE_SIZE);
+			_tile_size * boardPosition.m_x + translate,
+			_tile_size * boardPosition.m_y,
+			_tile_size, _tile_size);
 
 	std::string typeString;
 
@@ -290,9 +308,9 @@ void BoardView::_DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble b
 		std::string bitmapFile = typeString + whitePart;
 		if (auto iter = _bitmaps.find(bitmapFile); iter != _bitmaps.end()) {
 			gc->DrawBitmap(iter->second,
-					_TILE_SIZE * boardPosition.m_x + translate,
-					_TILE_SIZE * boardPosition.m_y,
-					_TILE_SIZE, _TILE_SIZE);
+					_tile_size * boardPosition.m_x + translate,
+					_tile_size * boardPosition.m_y,
+					_tile_size, _tile_size);
 		}
 	}
 
@@ -311,9 +329,9 @@ void BoardView::_DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble b
 		std::string bitmapFile = typeString + blackPart;
 		if (auto iter = _bitmaps.find(bitmapFile); iter != _bitmaps.end()) {
 			gc->DrawBitmap(iter->second,
-					_TILE_SIZE * boardPosition.m_x + translate,
-					_TILE_SIZE * boardPosition.m_y,
-					_TILE_SIZE, _TILE_SIZE);
+					_tile_size * boardPosition.m_x + translate,
+					_tile_size * boardPosition.m_y,
+					_tile_size, _tile_size);
 		}
 	}
 }

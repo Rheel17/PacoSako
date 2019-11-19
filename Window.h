@@ -40,6 +40,7 @@ private:
 	Game& _game;
 	Board _display;
 	bool _rotated = false;
+	int _tile_size = _MINIMUM_TILE_SIZE;
 
 	bool _mouse_down = false;
 	bool _is_dragging = false;
@@ -51,12 +52,15 @@ private:
 	std::vector<BoardPosition> _possible_moves;
 	ps::Move _current_move;
 
+	std::unique_ptr<wxBrush> _brush_board_dark;
+	std::unique_ptr<wxBrush> _brush_board_light;
 	std::unique_ptr<wxBrush> _brush_tile_origin;
 	std::unique_ptr<wxBrush> _brush_tile_mouseover;
+	std::unordered_map<std::string, wxImage> _images;
 	std::unordered_map<std::string, wxBitmap> _bitmaps;
 
 private:
-	constexpr static auto _TILE_SIZE = 72;
+	constexpr static int _MINIMUM_TILE_SIZE = 72;
 
 };
 

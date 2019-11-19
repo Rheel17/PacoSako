@@ -282,7 +282,6 @@ void Board::_AddKingMoves(const BoardPosition& position, const Piece& piece, Pie
 
 	const auto checkNotProtected = [&hasDestinations, &destinations, playerColor, moveData, checkSako, this]
 									(const BoardPosition& bp) {
-
 		if (!checkSako) {
 			return true;
 		}
@@ -369,10 +368,6 @@ void Board::_AddStraightMoves(const BoardPosition& position, const Piece& piece,
 void Board::_AddMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec, std::array<BoardPosition, 4> dps) const {
 	for (const auto& dp : dps) {
 		for (int i = 1; i < 8; i++) {
-			if (i == 0) {
-				continue;
-			}
-
 			int r = position.GetRow() + dp.GetRow() * i;
 			int c = position.GetColumn() + dp.GetColumn() * i;
 
