@@ -13,7 +13,75 @@ wxIMPLEMENT_APP(Game);
 
 Game::Game() {
 	_board = std::make_unique<Board>();
+
+	SetState("r3kb1r/p2ppppp/b1UPp2n2/qp4B1/3UQnP3/2N2N2/PPP2PPP/R3KB1R w KQkw - 1 8");
+
 	std::cout << GetPsFEN() << std::endl;
+}
+
+
+void Game::SetState(const std::string &psFEN) {
+	_board->SetPsFEN(psFEN);
+	_move_data = GameMoveData();
+
+	size_t boardEnd = psFEN.find(' ');
+	const char *arr = psFEN.c_str() + boardEnd + 1;
+
+	if (*arr == 'w') {
+		_player_color = Piece::Color::WHITE;
+	} else {
+		_player_color = Piece::Color::BLACK;
+	}
+
+	arr += 2;
+
+	if (*arr == '-') {
+		arr += 2;
+	} else {
+		if (*arr == 'K') {
+			_move_data.can_white_castle_king_side = true;
+			arr++;
+		}
+
+		if (*arr == 'Q') {
+			_move_data.can_white_castle_queen_side = true;
+			arr++;
+		}
+
+		if (*arr == 'k') {
+			_move_data.can_black_castle_king_side = true;
+			arr++;
+		}
+
+		if (*arr == 'q') {
+			_move_data.can_black_castle_queen_side = true;
+			arr++;
+		}
+
+		arr++;
+	}
+
+	if (*arr == '-') {
+		arr += 2;
+	} else {
+		int ep[2] = { *arr, *(arr + 1) };
+		ep[0] -= 'a';
+		ep[1] -= '0';
+
+		if (ep[1] <= 3) {
+			ep[1]++;
+		} else {
+			ep[1]--;
+		}
+
+		_move_data.en_passant_position = { ep[0], ep[1] };
+		arr += 3;
+	}
+
+	char *end;
+	_fify_move_rule_count = strtol(arr, &end, 10);
+	arr = end + 1;
+	_current_move = strtol(arr, &end, 10);
 }
 
 bool Game::OnInit() {

@@ -18,6 +18,8 @@ class Game : public wxApp {
 public:
 	Game();
 
+	void SetState(const std::string& psFEN);
+
 	bool OnInit() override;
 
 	const Board& GetBoard() const;

@@ -47,6 +47,8 @@ std::ostream& operator<<(std::ostream& out, Piece::Type t);
 Piece::Color opposite(Piece::Color c);
 char getTypeCharWhite(Piece::Type t);
 char getTypeCharBlack(Piece::Type t);
+Piece::Type getTypeWhite(char c);
+Piece::Type getTypeBlack(char c);
 
 }
 

@@ -143,4 +143,28 @@ char getTypeCharBlack(Piece::Type t) {
 	return 0;
 }
 
+Piece::Type getTypeWhite(char c) {
+	switch (c) {
+		case 'P': return Piece::Type::PAWN;
+		case 'R': return Piece::Type::ROOK;
+		case 'N': return Piece::Type::KNIGHT;
+		case 'B': return Piece::Type::BISHOP;
+		case 'Q': return Piece::Type::QUEEN;
+		case 'K': return Piece::Type::KING;
+		default: return Piece::Type::NONE;
+	}
+}
+
+Piece::Type getTypeBlack(char c) {
+	switch (c) {
+		case 'p': return Piece::Type::PAWN;
+		case 'r': return Piece::Type::ROOK;
+		case 'n': return Piece::Type::KNIGHT;
+		case 'b': return Piece::Type::BISHOP;
+		case 'q': return Piece::Type::QUEEN;
+		case 'k': return Piece::Type::KING;
+		default: return Piece::Type::NONE;
+	}
+}
+
 }

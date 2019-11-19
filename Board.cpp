@@ -86,6 +86,47 @@ std::string Board::GetPsFEN() const {
 	return ss.str();
 }
 
+void Board::SetPsFEN(const std::string& fen) {
+	const char *arr = fen.c_str();
+
+	for (int r = 7; r >= 0; r--) {
+		int c = 0;
+
+		while (c < 8) {
+			if ('1' <= *arr && *arr <= '8') {
+				int count = *arr - '0';
+
+				for (int i = 0; i < count; i++) {
+					_squares[r][c] = Piece();
+					c++;
+				}
+
+				arr++;
+				continue;
+			}
+
+			if (*arr == 'U') {
+				arr++; auto whiteType = getTypeWhite(*arr);
+				arr++; auto blackType = getTypeBlack(*arr);
+				arr++;
+
+				_squares[r][c] = Piece(whiteType, blackType);
+				c++;
+				continue;
+			}
+
+			auto whiteType = getTypeWhite(*arr);
+			auto blackType = getTypeBlack(*arr);
+
+			_squares[r][c] = Piece(whiteType, blackType);
+			c++;
+			arr++;
+		}
+
+		arr++;
+	}
+}
+
 const Piece& Board::GetPiece(const BoardPosition& position) const {
 	return _squares[position.GetRow()][position.GetColumn()];
 }
