@@ -3,6 +3,8 @@
  */
 #include "BoardPosition.h"
 
+namespace ps {
+
 BoardPosition::BoardPosition(int row, int column) :
 		_row(row), _column(column) {}
 
@@ -39,4 +41,6 @@ bool BoardPosition::operator==(const BoardPosition& bp) const {
 
 bool BoardPosition::operator!=(const BoardPosition& bp) const {
 	return _row != bp._row || _column != bp._column;
+}
+
 }

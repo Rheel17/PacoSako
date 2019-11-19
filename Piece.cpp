@@ -104,4 +104,15 @@ std::ostream& operator<<(std::ostream& out, Piece::Type piece) {
 	return out;
 }
 
+Piece::Color opposite(Piece::Color c) {
+	switch (c) {
+		case Piece::Color::WHITE:
+			return Piece::Color::BLACK;
+		case Piece::Color::BLACK:
+			return Piece::Color::WHITE;
+		default:
+			return c;
+	}
+}
+
 }

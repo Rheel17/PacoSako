@@ -10,7 +10,7 @@
 namespace ps {
 
 Move::Move(BoardPosition startMove) {
-	_positions.push_back(std::move(startMove));
+		_positions.push_back(std::move(startMove));
 }
 
 void Move::AddPosition(BoardPosition to) {

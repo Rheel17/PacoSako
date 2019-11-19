@@ -6,6 +6,8 @@
 
 #include "BoardPosition.h"
 
+namespace ps {
+
 struct GameMoveData {
 	BoardPosition en_passant_position = { -1, -1 };
 	bool can_white_castle_king_side = true;
@@ -13,5 +15,7 @@ struct GameMoveData {
 	bool can_black_castle_king_side = true;
 	bool can_black_castle_queen_side = true;
 };
+
+}
 
 #endif

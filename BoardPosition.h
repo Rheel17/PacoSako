@@ -6,6 +6,8 @@
 
 #include <string>
 
+namespace ps {
+
 class BoardPosition {
 
 public:
@@ -27,5 +29,7 @@ private:
 	int _column;
 
 };
+
+}
 
 #endif

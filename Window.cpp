@@ -176,6 +176,19 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 				0.0, 0.0, 8.0 * _TILE_SIZE, 8.0 * _TILE_SIZE);
 	}
 
+	// draw the coordinates
+	gc->SetFont(GetFont(), { 0, 0, 0 });
+
+	for (int i = 0; i < 8; i++) {
+		if (_rotated) {
+			gc->DrawText(wxString(char(i + '1'), 1), -10.0, (i + 0.5) * _TILE_SIZE - 5.0);
+			gc->DrawText(wxString(char('h' - i), 1), (i + 0.5) * _TILE_SIZE - 2.0, 8.0 * _TILE_SIZE + 5.0);
+		} else {
+			gc->DrawText(wxString(char('8' - i), 1), -10.0, (i + 0.5) * _TILE_SIZE - 5.0);
+			gc->DrawText(wxString(char(i + 'a'), 1), (i + 0.5) * _TILE_SIZE - 2.0, 8.0 * _TILE_SIZE + 5.0);
+		}
+	}
+
 	// draw the origin position
 	if (_moving_piece.GetColor() != Piece::Color::EMPTY) {
 		gc->SetBrush(*_brush_tile_origin);
@@ -183,6 +196,13 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 						_TILE_SIZE * _moving_piece_origin.GetColumn(),
 						_TILE_SIZE * _Row(_moving_piece_origin.GetRow()),
 						_TILE_SIZE, _TILE_SIZE);
+	}
+
+	// draw the pieces
+	for (int x = 0; x < 8; x++) {
+		for (int y = 0; y < 8; y++) {
+			_DrawPiece(gc, _display[{ _Row(y), x }], { wxDouble(x), wxDouble(y) });
+		}
 	}
 
 	// draw the possible moves
@@ -199,13 +219,6 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 				_TILE_SIZE * move.GetColumn() + _TILE_SIZE / 2.0 - 11.0,
 				_TILE_SIZE * _Row(move.GetRow()) + _TILE_SIZE / 2.0 - 11.0,
 				22.0, 22.0);
-		}
-	}
-
-	// draw the pieces
-	for (int x = 0; x < 8; x++) {
-		for (int y = 0; y < 8; y++) {
-			_DrawPiece(gc, _display[{ _Row(y), x }], { wxDouble(x), wxDouble(y) });
 		}
 	}
 

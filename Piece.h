@@ -44,6 +44,8 @@ private:
 
 std::ostream& operator<<(std::ostream& out, Piece::Type t);
 
+Piece::Color opposite(Piece::Color c);
+
 }
 
 #endif
