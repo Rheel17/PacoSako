@@ -26,12 +26,15 @@ BoardView::BoardView(wxWindow *parent, Game& game) :
 
 	_display = game.GetBoard();
 
+	// set widget properties
 	SetDoubleBuffered(true);
 	SetMinSize({ _TILE_SIZE * 9, _TILE_SIZE * 9 });
 
+	// some brush constants
 	_brush_tile_origin = std::make_unique<wxBrush>(wxColour(249, 166, 45, 143));
 	_brush_tile_mouseover = std::make_unique<wxBrush>(wxColour(67, 107, 166, 143));
 
+	// Specify the png files used in the rendering
 	std::vector<std::string> files = {
 			"board_standard", "board_rotated",
 			"icon_under_left_white", "icon_under_left_black",
@@ -51,6 +54,7 @@ BoardView::BoardView(wxWindow *parent, Game& game) :
 			"icon_head_king_right_white", "icon_head_king_right_black",
 	};
 
+	// load the png files
 	for (const auto& file : files) {
 		wxFileInputStream input("Resources/" + file + ".png");
 		wxImage i(input, wxBITMAP_TYPE_PNG);
@@ -70,6 +74,7 @@ void BoardView::SizeEvent(wxSizeEvent& evt) {
 
 void BoardView::MouseLeftDownEvent(wxMouseEvent& evt) {
 	if (_moving_piece.GetColor() != Piece::Color::EMPTY) {
+		// if we are currently holding a piece: drop it.
 		_PutDown();
 		_Redraw();
 		return;
@@ -80,19 +85,28 @@ void BoardView::MouseLeftDownEvent(wxMouseEvent& evt) {
 	_mouse_down = true;
 	_is_dragging = false;
 
+	// transform the mouse position to board space
 	_mouse_point = {
 			(evt.m_x - (size.x - 8.0 * _TILE_SIZE) / 2.0) / _TILE_SIZE,
 			(evt.m_y - (size.y - 8.0 * _TILE_SIZE) / 2.0) / _TILE_SIZE
 	};
 
+	// we are not currently holding a piece, so check if the user clicked a
+	// square with a piece
 	if (_mouse_point.m_x > 0 && _mouse_point.m_x < 8) {
+		// get the x, y position on the board
 		int x = int(_mouse_point.m_x);
 		int y = _Row(int(_mouse_point.m_y));
 
+		// set the piece origin
 		_moving_piece_origin = { y, x };
+
+		// get the piece at the clicked square
 		const Piece& draggingPiece = _game.GetBoard()[_moving_piece_origin];
 
 		if (draggingPiece.GetColor() == _game.GetPlayerColor() || draggingPiece.GetColor() == Piece::Color::UNION) {
+			// we can pick up the current piece; so pick it up
+
 			_display[_moving_piece_origin] = Piece();
 			_moving_piece = draggingPiece;
 			_possible_moves = _game.GetBoard().CalculatePossibleMoves(_moving_piece_origin, _game.GetPlayerColor(), _game.GetMoveData());
@@ -304,13 +318,19 @@ void BoardView::_DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble b
 }
 
 void BoardView::_PutDown() {
+	// we are no longer dragging the piece, because we just dropped it
 	_is_dragging = false;
 
+	// check if the dropped square is a valid position for the current moving
+	// piece
 	if (_moving_piece_origin != _mouse_position && _mouse_position.IsValid() &&
 			std::find(_possible_moves.begin(), _possible_moves.end(), _mouse_position) != _possible_moves.end()) {
 
+		// we can drop the piece here; so do that.
+		// append the current move chain
 		_current_move.AddPosition(_mouse_position);
 
+		// check for en passant
 		if (_game.GetBoard()[_mouse_position].GetColor() == Piece::Color::EMPTY &&
 				_moving_piece.GetTypeOfColor(_game.GetPlayerColor()) == Piece::Type::PAWN &&
 				_moving_piece_origin.GetColumn() != _mouse_position.GetColumn()) {
@@ -320,26 +340,35 @@ void BoardView::_PutDown() {
 			_display[{ _moving_piece_origin.GetRow(), _mouse_position.GetColumn() }] = Piece();
 
 			if (original.GetColor() == Piece::Color::UNION) {
+				// the target was a union, so chain the move with the new piece.
+
 				_display[_mouse_position] = original;
 				_moving_piece = _display[_mouse_position].MakeUnionWith(_moving_piece);
 				_moving_piece_origin = _mouse_position;
 				_possible_moves = _display.CalculatePossibleMoves(_moving_piece_origin, _moving_piece, _game.GetPlayerColor(), _game.GetMoveData());
 				return;
 			} else {
+				// the target was not a union, so finish the move.
 				_game.MakeMove(_current_move);
 			}
 		} else {
+			// this was not an en passant move
 			if (_game.GetBoard()[_mouse_position].GetColor() == Piece::Color::UNION) {
+				// the target was a union, so chain the move with the new piece.
+
 				_moving_piece = _display[_mouse_position].MakeUnionWith(_moving_piece);
 				_moving_piece_origin = _mouse_position;
 				_possible_moves = _display.CalculatePossibleMoves(_moving_piece_origin, _moving_piece, _game.GetPlayerColor(), _game.GetMoveData());
 				return;
 			} else {
+				// the target was not a union, so finish the move.
 				_game.MakeMove(_current_move);
 			}
 		}
 	}
 
+	// we are done dropping the piece, and it was the last piece of the chain:
+	// clear the moving piece and reset the displayed board to the actual board.
 	_moving_piece_origin = { -1, -1 };
 	_moving_piece = Piece();
 	_possible_moves.clear();

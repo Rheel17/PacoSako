@@ -14,25 +14,28 @@ wxIMPLEMENT_APP(Game);
 Game::Game() {
 	_board = std::make_unique<Board>();
 
-	SetState("r3kb1r/p2ppppp/b1UPp2n2/qp4B1/3UQnP3/2N2N2/PPP2PPP/R3KB1R w KQkw - 1 8");
+	SetState("3r2UNr1/pkUPb1UPqUPp1P/b4UBpB1/2p4URp/2p1UNp1UPn1/1UPpURn5/1PQ4P/2K5 w KQkw - 4 33");
 
 	std::cout << GetPsFEN() << std::endl;
 }
 
 
 void Game::SetState(const std::string &psFEN) {
+	// Read the board
 	_board->SetPsFEN(psFEN);
 	_move_data = GameMoveData();
 
 	size_t boardEnd = psFEN.find(' ');
 	const char *arr = psFEN.c_str() + boardEnd + 1;
 
+	// read the current player
 	if (*arr == 'w') {
 		_player_color = Piece::Color::WHITE;
 	} else {
 		_player_color = Piece::Color::BLACK;
 	}
 
+	// read the castling possibilities
 	arr += 2;
 
 	if (*arr == '-') {
@@ -61,6 +64,7 @@ void Game::SetState(const std::string &psFEN) {
 		arr++;
 	}
 
+	// read the en passant position
 	if (*arr == '-') {
 		arr += 2;
 	} else {
@@ -78,6 +82,7 @@ void Game::SetState(const std::string &psFEN) {
 		arr += 3;
 	}
 
+	// read the move counts
 	char *end;
 	_fify_move_rule_count = strtol(arr, &end, 10);
 	arr = end + 1;
