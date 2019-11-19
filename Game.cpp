@@ -13,6 +13,7 @@ wxIMPLEMENT_APP(Game);
 
 Game::Game() {
 	_board = std::make_unique<Board>();
+	std::cout << GetPsFEN() << std::endl;
 }
 
 bool Game::OnInit() {
@@ -97,6 +98,59 @@ void Game::MakeMove(const Move& move) {
 
 	// next player
 	SwitchPlayerColor();
+
+	if (_player_color == Piece::Color::WHITE) {
+		currentMove++;
+	}
+
+	std::cout << GetPsFEN() << std::endl;
+}
+
+std::string Game::GetPsFEN() const {
+	std::string boardFEN = _board->GetPsFEN();
+	boardFEN += ' ';
+
+	if (_player_color == Piece::Color::WHITE) {
+		boardFEN += 'w';
+	} else {
+		boardFEN += 'b';
+	}
+
+	boardFEN += ' ';
+
+	if (_move_data.can_white_castle_king_side || _move_data.can_white_castle_queen_side ||
+			_move_data.can_black_castle_king_side || _move_data.can_black_castle_queen_side) {
+
+		if (_move_data.can_white_castle_king_side) boardFEN += 'K';
+		if (_move_data.can_white_castle_queen_side) boardFEN += 'Q';
+		if (_move_data.can_black_castle_king_side) boardFEN += 'k';
+		if (_move_data.can_black_castle_queen_side) boardFEN += 'w';
+
+		boardFEN += ' ';
+	} else {
+		boardFEN += "- ";
+	}
+
+	BoardPosition ep = _move_data.en_passant_position;
+
+	if (ep.IsValid()) {
+		if (ep.GetRow() <= 3) {
+			ep = { ep.GetRow() - 1, ep.GetColumn() };
+		} else {
+			ep = { ep.GetRow() + 1, ep.GetColumn() };
+		}
+
+		boardFEN += ep.GetName();
+		boardFEN += ' ';
+	} else {
+		boardFEN += "- ";
+	}
+
+	boardFEN += std::to_string(fifyMoveRuleCount);
+	boardFEN += ' ';
+	boardFEN += std::to_string(currentMove);
+
+	return boardFEN;
 }
 
 }

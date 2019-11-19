@@ -115,4 +115,32 @@ Piece::Color opposite(Piece::Color c) {
 	}
 }
 
+char getTypeCharWhite(Piece::Type t) {
+	switch (t) {
+		case Piece::Type::NONE: return 0;
+		case Piece::Type::PAWN: return 'P';
+		case Piece::Type::ROOK: return 'R';
+		case Piece::Type::KNIGHT: return 'N';
+		case Piece::Type::BISHOP: return 'B';
+		case Piece::Type::QUEEN: return 'Q';
+		case Piece::Type::KING: return 'K';
+	}
+
+	return 0;
+}
+
+char getTypeCharBlack(Piece::Type t) {
+	switch (t) {
+		case Piece::Type::NONE: return 0;
+		case Piece::Type::PAWN: return 'p';
+		case Piece::Type::ROOK: return 'r';
+		case Piece::Type::KNIGHT: return 'n';
+		case Piece::Type::BISHOP: return 'b';
+		case Piece::Type::QUEEN: return 'q';
+		case Piece::Type::KING: return 'k';
+	}
+
+	return 0;
+}
+
 }

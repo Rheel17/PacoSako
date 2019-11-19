@@ -30,6 +30,8 @@ public:
 
 	void MakeMove(const Move& move);
 
+	std::string GetPsFEN() const;
+
 
 private:
 	Game(const Game&) = delete;
@@ -41,6 +43,8 @@ private:
 	std::unique_ptr<Board> _board;
 	Piece::Color _player_color = Piece::Color::WHITE;
 	GameMoveData _move_data;
+	int fifyMoveRuleCount = 0;
+	int currentMove = 1;
 
 };
 

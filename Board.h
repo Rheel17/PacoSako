@@ -18,6 +18,8 @@ class Board {
 public:
 	Board();
 
+	std::string GetPsFEN() const;
+
 	const Piece& GetPiece(const BoardPosition& position) const;
 	Piece& GetPiece(const BoardPosition& position);
 

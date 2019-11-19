@@ -4,6 +4,7 @@
 #include "Board.h"
 
 #include <algorithm>
+#include <sstream>
 
 namespace ps {
 
@@ -37,6 +38,52 @@ Board::Board() {
 		// a7-z7 (black pawns)
 		_squares[6][i] = Piece(Piece::Type::NONE, Piece::Type::PAWN);
 	}
+}
+
+std::string Board::GetPsFEN() const {
+	std::stringstream ss;
+
+	for (int r = 7; r >= 0; r--) {
+		if (r < 7) {
+			ss << '/';
+		}
+
+		int empty = 0;
+
+		for (int c = 0; c < 8; c++) {
+			const Piece& piece = GetPiece({ r, c });
+
+			if (piece.GetColor() == Piece::Color::EMPTY) {
+				empty++;
+				continue;
+			} else if (empty > 0) {
+				ss << empty;
+				empty = 0;
+			}
+
+			switch (piece.GetColor()) {
+				case Piece::Color::WHITE:
+					ss << getTypeCharWhite(piece.GetWhiteType());
+					break;
+				case Piece::Color::BLACK:
+					ss << getTypeCharBlack(piece.GetBlackType());
+					break;
+				case Piece::Color::UNION:
+					ss << 'U';
+					ss << getTypeCharWhite(piece.GetWhiteType());
+					ss << getTypeCharBlack(piece.GetBlackType());
+					break;
+				case Piece::Color::EMPTY:
+					break;
+			}
+		}
+
+		if (empty > 0) {
+			ss << empty;
+		}
+	}
+
+	return ss.str();
 }
 
 const Piece& Board::GetPiece(const BoardPosition& position) const {
