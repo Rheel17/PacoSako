@@ -356,12 +356,28 @@ void BoardView::_PutDown() {
 			if (_game.GetBoard()[_mouse_position].GetColor() == Piece::Color::UNION) {
 				// the target was a union, so chain the move with the new piece.
 
+				// check if there was a white pawn promotion
+				if (_mouse_position.GetRow() == 7 && _moving_piece.GetWhiteType() == Piece::Type::PAWN) {
+					// promote to queen
+					// TODO: make the player choose the piece
+					_moving_piece = Piece(Piece::Type::QUEEN, Piece::Type::NONE);
+				}
+
+				// check if there was a black pawn promotion
+				if (_mouse_position.GetRow() == 0 && _moving_piece.GetBlackType() == Piece::Type::PAWN) {
+					// promote to queen
+					// TODO: make the player choose the piece
+					_moving_piece = Piece(Piece::Type::NONE, Piece::Type::QUEEN);
+				}
+
 				_moving_piece = _display[_mouse_position].MakeUnionWith(_moving_piece);
 				_moving_piece_origin = _mouse_position;
 				_possible_moves = _display.CalculatePossibleMoves(_moving_piece_origin, _moving_piece, _game.GetPlayerColor(), _game.GetMoveData());
 				return;
 			} else {
 				// the target was not a union, so finish the move.
+				// TODO: check if a pawn promotion happened and if so, let the
+				// player choose a piece.
 				_game.MakeMove(_current_move);
 			}
 		}

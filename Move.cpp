@@ -34,6 +34,17 @@ void Move::PerformOn(Board &board) const {
 		assert(toPiece.GetColor() == Piece::Color::EMPTY);
 
 		toPiece = movingPiece;
+
+		// check for pawn promotions
+		// TODO: allow the player to choose the piece
+		if (_positions[1].GetRow() == 7 && toPiece.GetWhiteType() == Piece::Type::PAWN) {
+			toPiece = Piece(Piece::Type::QUEEN, toPiece.GetBlackType());
+		}
+
+		if (_positions[1].GetRow() == 0 && toPiece.GetBlackType() == Piece::Type::PAWN) {
+			toPiece = Piece(toPiece.GetBlackType(), Piece::Type::QUEEN);
+		}
+
 		return;
 	}
 
@@ -42,6 +53,16 @@ void Move::PerformOn(Board &board) const {
 
 		const BoardPosition& to = _positions[i + 1];
 		Piece& toPiece = board[to];
+
+		// check for pawn promotion
+		// TODO: allow the player to choose the piece
+		if (to.GetRow() == 7 && movingPiece.GetWhiteType() == Piece::Type::PAWN) {
+			movingPiece = Piece(Piece::Type::QUEEN, movingPiece.GetBlackType());
+		}
+
+		if (to.GetRow() == 0 && movingPiece.GetBlackType() == Piece::Type::PAWN) {
+			movingPiece = Piece(movingPiece.GetWhiteType(), Piece::Type::QUEEN);
+		}
 
 		switch (toPiece.GetColor()) {
 			case Piece::Color::EMPTY:
