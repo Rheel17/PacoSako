@@ -13,12 +13,8 @@ wxIMPLEMENT_APP(Game);
 
 Game::Game() {
 	_board = std::make_unique<Board>();
-
-	SetState("3r2UNr1/pkUPb1UPqUPp1P/b4UBpB1/2p4URp/2p1UNp1UPn1/1UPpURn5/1PQ4P/2K5 w KQkw - 4 33");
-
 	std::cout << GetPsFEN() << std::endl;
 }
-
 
 void Game::SetState(const std::string &psFEN) {
 	// Read the board
@@ -176,7 +172,7 @@ void Game::MakeMove(const Move& move) {
 	}
 
 	// check if a non-reversible move was made (only creating a union or pawn
-	// promotion are non-reversable moves in paco sako.
+	// promotion are non-reversible moves in paco sako.
 	// TODO: check for pawn promotion
 	if (positions.size() == 2 && movingPiece.GetColor() != Piece::Color::UNION &&
 			_board->GetPiece(positions.back()).GetColor() == Piece::Color::UNION) {

@@ -36,27 +36,26 @@ BoardView::BoardView(wxWindow *parent, Game& game) :
 
 	// Specify the png files used in the rendering
 	std::vector<std::string> files = {
-			"board_standard", "board_rotated",
-			"icon_under_left_white", "icon_under_left_black",
-			"icon_under_right_white", "icon_under_right_black",
+			"icon_under_white_left", "icon_under_black_left",
+			"icon_under_white_right", "icon_under_black_right",
 			"icon_under_union_wb", "icon_under_union_bw",
-			"icon_head_pawn_left_white", "icon_head_pawn_left_black",
-			"icon_head_pawn_right_white", "icon_head_pawn_right_black",
-			"icon_head_rook_left_white", "icon_head_rook_left_black",
-			"icon_head_rook_right_white", "icon_head_rook_right_black",
-			"icon_head_knight_left_white", "icon_head_knight_left_black",
-			"icon_head_knight_right_white", "icon_head_knight_right_black",
-			"icon_head_bishop_left_white", "icon_head_bishop_left_black",
-			"icon_head_bishop_right_white", "icon_head_bishop_right_black",
-			"icon_head_queen_left_white", "icon_head_queen_left_black",
-			"icon_head_queen_right_white", "icon_head_queen_right_black",
-			"icon_head_king_left_white", "icon_head_king_left_black",
-			"icon_head_king_right_white", "icon_head_king_right_black",
+			"icon_head_pawn_white_left", "icon_head_pawn_black_left",
+			"icon_head_pawn_white_right", "icon_head_pawn_black_right",
+			"icon_head_rook_white_left", "icon_head_rook_black_left",
+			"icon_head_rook_white_right", "icon_head_rook_black_right",
+			"icon_head_knight_white_left", "icon_head_knight_black_left",
+			"icon_head_knight_white_right", "icon_head_knight_black_right",
+			"icon_head_bishop_white_left", "icon_head_bishop_black_left",
+			"icon_head_bishop_white_right", "icon_head_bishop_black_right",
+			"icon_head_queen_white_left", "icon_head_queen_black_left",
+			"icon_head_queen_white_right", "icon_head_queen_black_right",
+			"icon_head_king_white_left", "icon_head_king_black_left",
+			"icon_head_king_white_right", "icon_head_king_black_right",
 	};
 
 	// load the png files
 	for (const auto& file : files) {
-		wxFileInputStream input("Resources/" + file + ".png");
+		wxFileInputStream input("Resources/png/" + file + ".png");
 		wxImage i(input, wxBITMAP_TYPE_PNG);
 		_bitmaps[file] = wxBitmap(i);
 	}
@@ -182,13 +181,13 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 	gc->SetTransform(transform);
 
 	// draw the board
-	if (_rotated) {
-		gc->DrawBitmap(_bitmaps["board_rotated"],
-				0.0, 0.0, 8.0 * _TILE_SIZE, 8.0 * _TILE_SIZE);
-	} else {
-		gc->DrawBitmap(_bitmaps["board_standard"],
-				0.0, 0.0, 8.0 * _TILE_SIZE, 8.0 * _TILE_SIZE);
-	}
+//	if (_rotated) {
+//		gc->DrawBitmap(_bitmaps["board_rotated"],
+//				0.0, 0.0, 8.0 * _TILE_SIZE, 8.0 * _TILE_SIZE);
+//	} else {
+//		gc->DrawBitmap(_bitmaps["board_standard"],
+//				0.0, 0.0, 8.0 * _TILE_SIZE, 8.0 * _TILE_SIZE);
+//	}
 
 	// draw the coordinates
 	gc->SetFont(GetFont(), { 0, 0, 0 });
@@ -241,14 +240,16 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 }
 
 void BoardView::_DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble boardPosition) {
+	// TODO: on resize, redraw the piece images
+
 	std::string postString;
 	std::string whitePart;
 	std::string blackPart;
 	int translate = 0;
 
 	if (_rotated) {
-		whitePart = "_left_white";
-		blackPart = "_right_black";
+		whitePart = "_white_left";
+		blackPart = "_black_right";
 
 		switch (piece.GetColor()) {
 			case Piece::Color::EMPTY: return;
@@ -257,8 +258,8 @@ void BoardView::_DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble b
 			case Piece::Color::UNION: postString = "_union_wb"; break;
 		}
 	} else {
-		whitePart = "_right_white";
-		blackPart = "_left_black";
+		whitePart = "_white_right";
+		blackPart = "_black_left";
 
 		switch (piece.GetColor()) {
 			case Piece::Color::EMPTY: return;
