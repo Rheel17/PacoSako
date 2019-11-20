@@ -266,8 +266,6 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 }
 
 void BoardView::_DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble boardPosition) {
-	// TODO: on resize, redraw the piece images
-
 	std::string postString;
 	std::string whitePart;
 	std::string blackPart;

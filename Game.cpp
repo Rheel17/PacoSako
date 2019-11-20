@@ -123,6 +123,14 @@ void Game::MakeMove(const Move& move) {
 
 	Piece movingPiece = _board->GetPiece(positions.front());
 
+	// count the number of pawns before the move for pawn promotion detection
+	int whitePawnCount = 0;
+	int blackPawnCount = 0;
+	for (const auto& position : positions) {
+		whitePawnCount += _board->GetPiece(position).GetWhiteType() == Piece::Type::PAWN;
+		blackPawnCount += _board->GetPiece(position).GetBlackType() == Piece::Type::PAWN;
+	}
+
 	_move_data.en_passant_position = { -1, -1 };
 	move.PerformOn(*_board);
 
@@ -172,11 +180,16 @@ void Game::MakeMove(const Move& move) {
 		}
 	}
 
+	// check for pawn promotion
+	for (const auto& position : positions) {
+		whitePawnCount -= _board->GetPiece(position).GetWhiteType() == Piece::Type::PAWN;
+		blackPawnCount -= _board->GetPiece(position).GetBlackType() == Piece::Type::PAWN;
+	}
+
 	// check if a non-reversible move was made (only creating a union or pawn
 	// promotion are non-reversible moves in paco sako.
-	// TODO: check for pawn promotion
-	if (positions.size() == 2 && movingPiece.GetColor() != Piece::Color::UNION &&
-			_board->GetPiece(positions.back()).GetColor() == Piece::Color::UNION) {
+	if (whitePawnCount != 0 || blackPawnCount || (positions.size() == 2 && movingPiece.GetColor() != Piece::Color::UNION &&
+			_board->GetPiece(positions.back()).GetColor() == Piece::Color::UNION)) {
 
 		_fify_move_rule_count = 0;
 	} else {
