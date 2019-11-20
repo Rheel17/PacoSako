@@ -456,10 +456,12 @@ void Board::_AddAllPossibleMoves(const BoardPosition& position, const Piece& pie
 }
 
 void Board::_AddAllPossibleChainMoves(Move prefix, const Piece& piece, std::vector<Move>& moves, const GameMoveData& moveData) const {
-
-	// TODO: fix when prefix move is the actual move. (b5 -> e8)
-
 	const BoardPosition& position = prefix.GetPositions().back();
+
+	if (piece.GetColor() == opposite(GetPiece(position).GetColor())) {
+		moves.push_back(prefix);
+		return;
+	}
 
 	Board dummy(*this);
 	Piece movingPiece = dummy[position].MakeUnionWith(piece);
