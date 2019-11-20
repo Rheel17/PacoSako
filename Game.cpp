@@ -13,7 +13,6 @@ wxIMPLEMENT_APP(Game);
 
 Game::Game() {
 	_board = std::make_unique<Board>();
-	SetState("r3k2r/ppp2ppp/8/1B1UPqpbB1/2UNpUPn4/3Q1N1n/PPP2UPbPP/3R1R1K b kw - 5 12");
 	std::cout << GetPsFEN() << std::endl;
 }
 
