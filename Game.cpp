@@ -3,22 +3,23 @@
  */
 #include "Game.h"
 
-#include <windows.h>
-
-#include "Window.h"
-
 namespace ps {
-
-wxIMPLEMENT_APP(Game);
 
 Game::Game() {
 	_board = std::make_unique<Board>();
 	std::cout << GetPsFEN() << std::endl;
 }
 
-void Game::SetState(const std::string &psFEN) {
+void Game::Loop() {
+
+}
+
+bool Game::SetState(const std::string &psFEN) {
 	// Read the board
-	_board->SetPsFEN(psFEN);
+	if (!_board->SetPsFEN(psFEN)) {
+		return false;
+	}
+
 	_move_data = GameMoveData();
 
 	size_t boardEnd = psFEN.find(' ');
@@ -83,14 +84,7 @@ void Game::SetState(const std::string &psFEN) {
 	_fify_move_rule_count = strtol(arr, &end, 10);
 	arr = end + 1;
 	_current_move = strtol(arr, &end, 10);
-}
 
-bool Game::OnInit() {
-	wxInitAllImageHandlers();
-
-	_window = new Window(*this);
-	_window->Show();
-	_window->Maximize(true);
 	return true;
 }
 

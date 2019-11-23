@@ -86,7 +86,11 @@ std::string Board::GetPsFEN() const {
 	return ss.str();
 }
 
-void Board::SetPsFEN(const std::string& fen) {
+bool Board::SetPsFEN(const std::string& fen) {
+	if (fen.empty()) {
+		return false;
+	}
+
 	const char *arr = fen.c_str();
 
 	for (int r = 7; r >= 0; r--) {
@@ -110,6 +114,10 @@ void Board::SetPsFEN(const std::string& fen) {
 				arr++; auto blackType = getTypeBlack(*arr);
 				arr++;
 
+				if (whiteType == Piece::Type::NONE || blackType == Piece::Type::NONE) {
+					return false;
+				}
+
 				_squares[r][c] = Piece(whiteType, blackType);
 				c++;
 				continue;
@@ -118,13 +126,25 @@ void Board::SetPsFEN(const std::string& fen) {
 			auto whiteType = getTypeWhite(*arr);
 			auto blackType = getTypeBlack(*arr);
 
+			if (whiteType == Piece::Type::NONE && blackType == Piece::Type::NONE) {
+				return false;
+			}
+
 			_squares[r][c] = Piece(whiteType, blackType);
 			c++;
 			arr++;
 		}
 
+		if (r > 0 && *arr != '/') {
+			return false;
+		} else if (r == 0 && *arr != ' ') {
+			return false;
+		}
+
 		arr++;
 	}
+
+	return true;
 }
 
 const Piece& Board::GetPiece(const BoardPosition& position) const {

@@ -10,8 +10,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Player.h"
 #include "Game.h"
-#include "Board.h"
 
 namespace ps {
 
@@ -19,7 +19,9 @@ class BoardView : public wxWindow {
 	wxDECLARE_EVENT_TABLE();
 
 public:
-	BoardView(wxWindow *parent, Game& game);
+	BoardView(wxWindow *parent, bool showCoordinates = true);
+
+	void SetGame(Game *game);
 
     void PaintEvent(wxPaintEvent& evt);
     void SizeEvent(wxSizeEvent& evt);
@@ -28,20 +30,23 @@ public:
     void MouseLeaveWindowEvent(wxMouseEvent& evt);
     void MouseMotionEvent(wxMouseEvent& evt);
 
+	void Redraw();
+
 private:
     int _Row(int r) const;
     int _Col(int c) const;
 
-	void _Redraw();
 	void _Draw(wxGraphicsContext *gc);
 	void _DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble boardPosition);
 
 	void _PutDown();
 
-	Game& _game;
 	Board _display;
+	bool _show_coordinates;
 	bool _rotated = false;
 	int _tile_size = _MINIMUM_TILE_SIZE;
+
+	Game *_game = nullptr;
 
 	bool _mouse_down = false;
 	bool _is_dragging = false;
@@ -65,13 +70,45 @@ private:
 
 };
 
+class NewGameDialog : public wxDialog {
+	wxDECLARE_EVENT_TABLE();
+
+public:
+	NewGameDialog(wxWindow *parent);
+
+	void TextEvent(wxCommandEvent& evt);
+	void CheckboxEvent(wxCommandEvent& evt);
+
+private:
+	wxComboBox *_combo_white;
+	wxComboBox *_combo_black;
+	wxTextCtrl *_text_game_setup;
+	wxCheckBox *_check_default_setup;
+	BoardView *_board_view;
+
+	bool _has_store_game_setup = false;
+	wxString _store_game_setup;
+
+	Game _game;
+
+private:
+	static constexpr auto _DEFAULT_SETUP = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkw - 0 1";
+	static constexpr auto _EMPTY_SETUP = "8/8/8/8/8/8/8/8 w - - 0 1";
+	static constexpr int _PLAYER_CHOICES_COUNT = 2;
+	const static wxString _PLAYER_CHOICES[_PLAYER_CHOICES_COUNT];
+
+};
+
 class Window : public wxFrame {
 
 public:
-	Window(Game& game);
+	Window();
+
+	void NewGame();
 
 private:
-	Game& _game;
+	wxMenuBar *_menu;
+	wxMenu *_menu_game;
 
 };
 

@@ -19,7 +19,7 @@ public:
 	Board();
 
 	std::string GetPsFEN() const;
-	void SetPsFEN(const std::string& fen);
+	bool SetPsFEN(const std::string& fen);
 
 	const Piece& GetPiece(const BoardPosition& position) const;
 	Piece& GetPiece(const BoardPosition& position);

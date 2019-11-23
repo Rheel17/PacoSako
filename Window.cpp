@@ -8,7 +8,14 @@
 #include <wx/wfstream.h>
 #include <wx/graphics.h>
 
+#define wxDefault wxDefaultPosition, wxDefaultSize
+
 namespace ps {
+
+const wxString NewGameDialog::_PLAYER_CHOICES[2] = {
+		"Human",
+		"AI: Random"
+};
 
 BEGIN_EVENT_TABLE(BoardView, wxPanel)
 	EVT_PAINT(BoardView::PaintEvent)
@@ -20,15 +27,18 @@ BEGIN_EVENT_TABLE(BoardView, wxPanel)
 	EVT_MOTION(BoardView::MouseMotionEvent)
 END_EVENT_TABLE()
 
-BoardView::BoardView(wxWindow *parent, Game& game) :
-		wxWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_SUNKEN),
-		_game(game) {
+BEGIN_EVENT_TABLE(NewGameDialog, wxDialog)
+EVT_TEXT(wxID_ANY, NewGameDialog::TextEvent)
+	EVT_CHECKBOX(wxID_ANY, NewGameDialog::CheckboxEvent)
+END_EVENT_TABLE()
 
-	_display = game.GetBoard();
+BoardView::BoardView(wxWindow *parent, bool showCoordinates) :
+		wxWindow(parent, wxID_ANY, wxDefault, wxBORDER_SUNKEN),
+		_show_coordinates(showCoordinates) {
 
 	// set widget properties
 	SetDoubleBuffered(true);
-	SetMinSize({ _tile_size * 9, _tile_size * 9 });
+	SetMinClientSize({ 180, 180 });
 
 	// some brush constants
 	_brush_board_dark = std::make_unique<wxBrush>(wxColour(215, 128, 73));
@@ -62,6 +72,10 @@ BoardView::BoardView(wxWindow *parent, Game& game) :
 	}
 }
 
+void BoardView::SetGame(Game *game) {
+	_game = game;
+}
+
 void BoardView::PaintEvent(wxPaintEvent& evt) {
 	auto size = GetClientSize();
 	_tile_size = std::min(size.x, size.y) / 9;
@@ -81,14 +95,14 @@ void BoardView::PaintEvent(wxPaintEvent& evt) {
 
 void BoardView::SizeEvent(wxSizeEvent& evt) {
 	_bitmaps.clear();
-	_Redraw();
+	Redraw();
 }
 
 void BoardView::MouseLeftDownEvent(wxMouseEvent& evt) {
 	if (_moving_piece.GetColor() != Piece::Color::EMPTY) {
 		// if we are currently holding a piece: drop it.
 		_PutDown();
-		_Redraw();
+		Redraw();
 		return;
 	}
 
@@ -105,7 +119,7 @@ void BoardView::MouseLeftDownEvent(wxMouseEvent& evt) {
 
 	// we are not currently holding a piece, so check if the user clicked a
 	// square with a piece
-	if (_mouse_point.m_x > 0 && _mouse_point.m_x < 8) {
+	if (_game && _mouse_point.m_x > 0 && _mouse_point.m_x < 8) {
 		// get the x, y position on the board
 		int x = _Col(int(_mouse_point.m_x));
 		int y = _Row(int(_mouse_point.m_y));
@@ -114,17 +128,17 @@ void BoardView::MouseLeftDownEvent(wxMouseEvent& evt) {
 		_moving_piece_origin = { y, x };
 
 		// get the piece at the clicked square
-		const Piece& draggingPiece = _game.GetBoard()[_moving_piece_origin];
+		const Piece& draggingPiece = _game->GetBoard()[_moving_piece_origin];
 
-		if (draggingPiece.GetColor() == _game.GetPlayerColor() || draggingPiece.GetColor() == Piece::Color::UNION) {
+		if (draggingPiece.GetColor() == _game->GetPlayerColor() || draggingPiece.GetColor() == Piece::Color::UNION) {
 			// we can pick up the current piece; so pick it up
 
 			_display[_moving_piece_origin] = Piece();
 			_moving_piece = draggingPiece;
-			_possible_moves = _game.GetBoard().CalculatePossibleMoves(_moving_piece_origin, _game.GetPlayerColor(), _game.GetMoveData());
+		_possible_moves = _game->GetBoard().CalculatePossibleMoves(_moving_piece_origin, _game->GetPlayerColor(), _game->GetMoveData());
 			_current_move = ps::Move(_moving_piece_origin);
 
-			_Redraw();
+			Redraw();
 		} else {
 			_moving_piece_origin = { -1, -1 };
 		}
@@ -136,13 +150,13 @@ void BoardView::MouseLeftUpEvent(wxMouseEvent& evt) {
 
 	if (_is_dragging) {
 		_PutDown();
-		_Redraw();
+		Redraw();
 	}
 }
 
 void BoardView::MouseLeaveWindowEvent(wxMouseEvent& evt) {
 	_PutDown();
-	_Redraw();
+	Redraw();
 }
 
 void BoardView::MouseMotionEvent(wxMouseEvent& evt) {
@@ -161,7 +175,11 @@ void BoardView::MouseMotionEvent(wxMouseEvent& evt) {
 		_is_dragging = true;
 	}
 
-	_Redraw();
+	Redraw();
+}
+
+void BoardView::Redraw() {
+	RefreshRect(GetClientRect(), false);
 }
 
 int BoardView::_Row(int r) const {
@@ -178,10 +196,6 @@ int BoardView::_Col(int c) const {
 	} else {
 		return c;
 	}
-}
-
-void BoardView::_Redraw() {
-	RefreshRect(GetClientRect(), false);
 }
 
 void BoardView::_Draw(wxGraphicsContext *gc) {
@@ -216,16 +230,22 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 	}
 
 	// draw the coordinates
-	gc->SetFont(GetFont(), { 0, 0, 0 });
+	if (_show_coordinates) {
+		gc->SetFont(GetFont(), { 0, 0, 0 });
 
-	for (int i = 0; i < 8; i++) {
-		if (_rotated) {
-			gc->DrawText(wxString(char(i + '1'), 1), -10.0, (i + 0.5) * _tile_size - 5.0);
-			gc->DrawText(wxString(char('h' - i), 1), (i + 0.5) * _tile_size - 2.0, 8.0 * _tile_size + 5.0);
-		} else {
-			gc->DrawText(wxString(char('8' - i), 1), -10.0, (i + 0.5) * _tile_size - 5.0);
-			gc->DrawText(wxString(char(i + 'a'), 1), (i + 0.5) * _tile_size - 2.0, 8.0 * _tile_size + 5.0);
+		for (int i = 0; i < 8; i++) {
+			if (_rotated) {
+				gc->DrawText(wxString(char(i + '1'), 1), -10.0, (i + 0.5) * _tile_size - 5.0);
+				gc->DrawText(wxString(char('h' - i), 1), (i + 0.5) * _tile_size - 2.0, 8.0 * _tile_size + 5.0);
+			} else {
+				gc->DrawText(wxString(char('8' - i), 1), -10.0, (i + 0.5) * _tile_size - 5.0);
+				gc->DrawText(wxString(char(i + 'a'), 1), (i + 0.5) * _tile_size - 2.0, 8.0 * _tile_size + 5.0);
+			}
 		}
+	}
+
+	if (!_game) {
+		return;
 	}
 
 	// draw the origin position
@@ -277,8 +297,8 @@ void BoardView::_DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble b
 
 		switch (piece.GetColor()) {
 			case Piece::Color::EMPTY: return;
-			case Piece::Color::WHITE: postString = whitePart; translate =  8; break;
-			case Piece::Color::BLACK: postString = blackPart; translate = -8; break;
+			case Piece::Color::WHITE: postString = whitePart; translate =  9; break;
+			case Piece::Color::BLACK: postString = blackPart; translate = -9; break;
 			case Piece::Color::UNION: postString = "_union_wb"; break;
 		}
 	} else {
@@ -287,10 +307,14 @@ void BoardView::_DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble b
 
 		switch (piece.GetColor()) {
 			case Piece::Color::EMPTY: return;
-			case Piece::Color::WHITE: postString = whitePart; translate = -8; break;
-			case Piece::Color::BLACK: postString = blackPart; translate =  8; break;
+			case Piece::Color::WHITE: postString = whitePart; translate = -9; break;
+			case Piece::Color::BLACK: postString = blackPart; translate =  9; break;
 			case Piece::Color::UNION: postString = "_union_bw"; break;
 		}
+	}
+
+	if (translate != 0) {
+		translate = _tile_size / translate;
 	}
 
 	gc->DrawBitmap(_bitmaps["icon_under" + postString],
@@ -346,6 +370,10 @@ void BoardView::_PutDown() {
 	// we are no longer dragging the piece, because we just dropped it
 	_is_dragging = false;
 
+	if (!_game) {
+		return;
+	}
+
 	// check if the dropped square is a valid position for the current moving
 	// piece
 	if (_moving_piece_origin != _mouse_position && _mouse_position.IsValid() &&
@@ -356,8 +384,8 @@ void BoardView::_PutDown() {
 		_current_move.AddPosition(_mouse_position);
 
 		// check for en passant
-		if (_game.GetBoard()[_mouse_position].GetColor() == Piece::Color::EMPTY &&
-				_moving_piece.GetTypeOfColor(_game.GetPlayerColor()) == Piece::Type::PAWN &&
+		if (_game->GetBoard()[_mouse_position].GetColor() == Piece::Color::EMPTY &&
+				_moving_piece.GetTypeOfColor(_game->GetPlayerColor()) == Piece::Type::PAWN &&
 				_moving_piece_origin.GetColumn() != _mouse_position.GetColumn()) {
 
 			// this was an en passant move
@@ -370,15 +398,15 @@ void BoardView::_PutDown() {
 				_display[_mouse_position] = original;
 				_moving_piece = _display[_mouse_position].MakeUnionWith(_moving_piece);
 				_moving_piece_origin = _mouse_position;
-				_possible_moves = _display.CalculatePossibleMoves(_moving_piece_origin, _moving_piece, _game.GetPlayerColor(), _game.GetMoveData());
+				_possible_moves = _display.CalculatePossibleMoves(_moving_piece_origin, _moving_piece, _game->GetPlayerColor(), _game->GetMoveData());
 				return;
 			} else {
 				// the target was not a union, so finish the move.
-				_game.MakeMove(_current_move);
+				_game->MakeMove(_current_move);
 			}
 		} else {
 			// this was not an en passant move
-			if (_game.GetBoard()[_mouse_position].GetColor() == Piece::Color::UNION) {
+			if (_game->GetBoard()[_mouse_position].GetColor() == Piece::Color::UNION) {
 				// the target was a union, so chain the move with the new piece.
 
 				// check if there was a white pawn promotion
@@ -397,13 +425,13 @@ void BoardView::_PutDown() {
 
 				_moving_piece = _display[_mouse_position].MakeUnionWith(_moving_piece);
 				_moving_piece_origin = _mouse_position;
-				_possible_moves = _display.CalculatePossibleMoves(_moving_piece_origin, _moving_piece, _game.GetPlayerColor(), _game.GetMoveData());
+				_possible_moves = _display.CalculatePossibleMoves(_moving_piece_origin, _moving_piece, _game->GetPlayerColor(), _game->GetMoveData());
 				return;
 			} else {
 				// the target was not a union, so finish the move.
 				// TODO: check if a pawn promotion happened and if so, let the
 				// player choose a piece.
-				_game.MakeMove(_current_move);
+				_game->MakeMove(_current_move);
 			}
 		}
 	}
@@ -414,25 +442,136 @@ void BoardView::_PutDown() {
 	_moving_piece = Piece();
 	_possible_moves.clear();
 	_current_move = ps::Move();
-	_display = _game.GetBoard();
+	_display = _game->GetBoard();
 }
 
-Window::Window(Game& game) :
-		wxFrame(nullptr, wxID_ANY, L"Paco Ŝako"),
-		_game(game) {
+NewGameDialog::NewGameDialog(wxWindow *parent) :
+		wxDialog(parent, wxID_ANY, "New Game") {
 
-	wxSplitterWindow* splitter = new wxSplitterWindow(this);
+	auto panel = new wxBoxSizer(wxHORIZONTAL);
+	auto labelPanel = new wxFlexGridSizer(5, 1, 0, 0);
+	auto contentPanel = new wxBoxSizer(wxVERTICAL);
+	auto topRightPanel = new wxFlexGridSizer(1, 2, 0, 0);
+	auto colorPanel = new wxFlexGridSizer(3, 1, 0, 0);
+	auto setupPanel = new wxFlexGridSizer(2, 1, 0, 0);
+
+	topRightPanel->AddGrowableCol(1, 1);
+	labelPanel->AddGrowableRow(2, 2);
+
+	_combo_white = new wxComboBox(this, wxID_ANY, "Human", wxDefault, _PLAYER_CHOICES_COUNT, _PLAYER_CHOICES, wxCB_READONLY);
+	_combo_black = new wxComboBox(this, wxID_ANY, "Human", wxDefault, _PLAYER_CHOICES_COUNT, _PLAYER_CHOICES, wxCB_READONLY);
+	_text_game_setup = new wxTextCtrl(this, wxID_ANY, _DEFAULT_SETUP);
+	_check_default_setup = new wxCheckBox(this, wxID_ANY, "Use default setup");
+	_board_view = new BoardView(this, false);
+
+	_combo_white->SetMinSize(wxSize(172, _combo_white->GetMinHeight()));
+	_combo_black->SetMinSize(wxSize(172, _combo_black->GetMinHeight()));
+	_text_game_setup->SetMinSize(wxSize(521, _text_game_setup->GetMinHeight()));
+	_text_game_setup->Enable(false);
+	_check_default_setup->Set3StateValue(wxCheckBoxState::wxCHK_CHECKED);
+	_board_view->SetGame(&_game);
+
+	auto labelWhiteSizer = new wxBoxSizer(wxHORIZONTAL);
+	auto labelBlackSizer = new wxBoxSizer(wxHORIZONTAL);
+	auto labelGameSetupSizer = new wxBoxSizer(wxHORIZONTAL);
+
+	auto labelWhite = new wxStaticText(this, wxID_ANY, "White:", wxDefault, wxALIGN_RIGHT);
+	auto labelBlack = new wxStaticText(this, wxID_ANY, "Black:", wxDefault, wxALIGN_RIGHT);
+	auto labelGameSetup = new wxStaticText(this, wxID_ANY, "Game setup:", wxDefault, wxALIGN_RIGHT);
+
+	labelWhiteSizer->Add(labelWhite, 0, wxALIGN_CENTER_VERTICAL);
+	labelBlackSizer->Add(labelBlack, 0, wxALIGN_CENTER_VERTICAL);
+	labelGameSetupSizer->Add(labelGameSetup, 0, wxALIGN_CENTER_VERTICAL);
+
+	labelWhiteSizer->Add(0, _combo_white->GetClientSize().y);
+	labelBlackSizer->Add(0, _combo_black->GetClientSize().y);
+	labelGameSetupSizer->Add(0, _text_game_setup->GetClientSize().y);
+
+	wxSizerFlags textSizerFlags = wxSizerFlags().Right().Border(wxLEFT | wxTOP | wxBOTTOM, 10);
+	wxSizerFlags borderSizerFlags = wxSizerFlags().Expand().Border(wxALL, 10);
+
+	labelPanel->Add(labelWhiteSizer, textSizerFlags);
+	labelPanel->Add(labelBlackSizer, textSizerFlags);
+	labelPanel->Add(0, 100, 1);
+	labelPanel->Add(labelGameSetupSizer, textSizerFlags);
+
+	colorPanel->Add(_combo_white, borderSizerFlags);
+	colorPanel->Add(_combo_black, borderSizerFlags);
+	colorPanel->AddStretchSpacer(1);
+
+	setupPanel->Add(_text_game_setup, borderSizerFlags);
+	setupPanel->Add(_check_default_setup, wxSizerFlags().Border(wxLEFT | wxBOTTOM | wxRIGHT, 10));
+
+	topRightPanel->Add(colorPanel, 1);
+	topRightPanel->Add(_board_view, wxSizerFlags(1).Right().Border(wxLEFT | wxRIGHT, 10));
+	contentPanel->Add(topRightPanel, wxSizerFlags(1).Expand());
+	contentPanel->Add(setupPanel);
+
+	panel->Add(labelPanel, 0);
+	panel->Add(contentPanel, 1);
+
+	SetSizerAndFit(panel);
+	CenterOnParent();
+
+	// TODO: add 'Create Game' and 'Cancel' buttons.
+}
+
+void NewGameDialog::TextEvent(wxCommandEvent& evt) {
+	if (_game.SetState(std::string(_text_game_setup->GetValue().c_str()))) {
+		std::cout << "valid" << std::endl;
+	} else {
+		std::cout << "invalid" << std::endl;
+		_game.SetState(_EMPTY_SETUP);
+	}
+
+	// TODO: properly redraw and also prevent the user from making changes on the board.
+	_board_view->Redraw();
+}
+
+void NewGameDialog::CheckboxEvent(wxCommandEvent& evt) {
+	bool checked = _check_default_setup->Get3StateValue() == wxCheckBoxState::wxCHK_CHECKED;
+
+	if (checked) {
+		_store_game_setup = _text_game_setup->GetValue();
+		_has_store_game_setup = true;
+		_text_game_setup->SetValue(_DEFAULT_SETUP);
+		_text_game_setup->Enable(false);
+	} else {
+		if (_has_store_game_setup) {
+			_text_game_setup->SetValue(_store_game_setup);
+		}
+
+		_text_game_setup->Enable(true);
+	}
+}
+
+Window::Window() :
+		wxFrame(nullptr, wxID_ANY, L"Paco Ŝako") {
+
+	_menu_game = new wxMenu;
+	_menu_game->Append(wxID_NEW, L"&New");
+
+	_menu = new wxMenuBar;
+	_menu->Append(_menu_game, L"Game");
+	SetMenuBar(_menu);
+
+	wxSplitterWindow *splitter = new wxSplitterWindow(this);
 	splitter->SetMinimumPaneSize(100);
 	splitter->SetWindowStyle(splitter->GetWindowStyle() | wxSP_LIVE_UPDATE);
 
-	BoardView* left = new BoardView(splitter, _game);
-	wxPanel* right = new wxPanel(splitter, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_SUNKEN);
+	BoardView *left = new BoardView(splitter);
+	wxPanel *right = new wxPanel(splitter, wxID_ANY, wxDefault, wxBORDER_SUNKEN);
 
 	splitter->SplitVertically(left, right);
 
-	wxBoxSizer* topSizer = new wxBoxSizer(wxHORIZONTAL);
+	wxBoxSizer *topSizer = new wxBoxSizer(wxHORIZONTAL);
 	topSizer->Add(splitter, 1, wxEXPAND);
 	SetSizerAndFit(topSizer);
+}
+
+void Window::NewGame() {
+	NewGameDialog *newGameDialog = new NewGameDialog(this);
+	newGameDialog->ShowModal();
 }
 
 }
