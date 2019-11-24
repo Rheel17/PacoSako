@@ -7,7 +7,6 @@ namespace ps {
 
 Game::Game() {
 	_board = std::make_unique<Board>();
-	std::cout << GetPsFEN() << std::endl;
 }
 
 
@@ -16,7 +15,8 @@ Game::Game(const Game& game) noexcept :
 	_player_color(std::move(game._player_color)),
 	_move_data(std::move(game._move_data)),
 	_fify_move_rule_count(std::move(game._fify_move_rule_count)),
-	_current_move(std::move(game._current_move)) {}
+	_current_move(std::move(game._current_move)) {
+}
 
 Game& Game::operator=(const Game& game) noexcept {
 	_board = std::make_unique<Board>(*game._board);
@@ -213,8 +213,6 @@ void Game::MakeMove(const Move& move) {
 	if (_player_color == Piece::Color::WHITE) {
 		_current_move++;
 	}
-
-	std::cout << GetPsFEN() << std::endl;
 }
 
 std::string Game::GetPsFEN() const {

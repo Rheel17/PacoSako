@@ -600,7 +600,7 @@ void Window::NewGame() {
 
 void Window::StartGame(Game game) {
 	_game = std::move(game);
-	_board_view->SetGame(&game);
+	_board_view->SetGame(&_game);
 }
 
 }

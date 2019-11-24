@@ -21,6 +21,9 @@ public:
 	Game(const Game& game) noexcept;
 	Game& operator=(const Game& game) noexcept;
 
+	Game(Game&&) = default;
+	Game& operator=(Game&&) = default;
+
 	void Loop();
 
 	bool SetState(const std::string& psFEN);
