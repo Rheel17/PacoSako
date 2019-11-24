@@ -19,7 +19,7 @@ class BoardView : public wxWindow {
 	wxDECLARE_EVENT_TABLE();
 
 public:
-	BoardView(wxWindow *parent, bool showCoordinates = true);
+	BoardView(wxWindow *parent, bool displayOnly = false);
 
 	void SetGame(Game *game);
 
@@ -42,7 +42,7 @@ private:
 	void _PutDown();
 
 	Board _display;
-	bool _show_coordinates;
+	bool _display_only;
 	bool _rotated = false;
 	int _tile_size = _MINIMUM_TILE_SIZE;
 
@@ -78,6 +78,8 @@ public:
 
 	void TextEvent(wxCommandEvent& evt);
 	void CheckboxEvent(wxCommandEvent& evt);
+	void CancelButtonEvent(wxCommandEvent& evt);
+	void CreateButtonEvent(wxCommandEvent& evt);
 
 private:
 	wxComboBox *_combo_white;

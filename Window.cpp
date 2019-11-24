@@ -17,7 +17,10 @@ const wxString NewGameDialog::_PLAYER_CHOICES[2] = {
 		"AI: Random"
 };
 
-BEGIN_EVENT_TABLE(BoardView, wxPanel)
+#define ID_BUTTON_CANCEL 17001
+#define ID_BUTTON_CREATE 17002
+
+BEGIN_EVENT_TABLE(BoardView, wxWindow)
 	EVT_PAINT(BoardView::PaintEvent)
 	EVT_SIZE(BoardView::SizeEvent)
 	EVT_LEFT_DOWN(BoardView::MouseLeftDownEvent)
@@ -27,14 +30,16 @@ BEGIN_EVENT_TABLE(BoardView, wxPanel)
 	EVT_MOTION(BoardView::MouseMotionEvent)
 END_EVENT_TABLE()
 
-BEGIN_EVENT_TABLE(NewGameDialog, wxDialog)
+BEGIN_EVENT_TABLE(NewGameDialog, wxTopLevelWindow)
 EVT_TEXT(wxID_ANY, NewGameDialog::TextEvent)
 	EVT_CHECKBOX(wxID_ANY, NewGameDialog::CheckboxEvent)
+	EVT_BUTTON(ID_BUTTON_CANCEL, NewGameDialog::CancelButtonEvent)
+	EVT_BUTTON(ID_BUTTON_CREATE, NewGameDialog::CreateButtonEvent)
 END_EVENT_TABLE()
 
-BoardView::BoardView(wxWindow *parent, bool showCoordinates) :
+BoardView::BoardView(wxWindow *parent, bool displayOnly) :
 		wxWindow(parent, wxID_ANY, wxDefault, wxBORDER_SUNKEN),
-		_show_coordinates(showCoordinates) {
+		_display_only(displayOnly) {
 
 	// set widget properties
 	SetDoubleBuffered(true);
@@ -119,7 +124,7 @@ void BoardView::MouseLeftDownEvent(wxMouseEvent& evt) {
 
 	// we are not currently holding a piece, so check if the user clicked a
 	// square with a piece
-	if (_game && _mouse_point.m_x > 0 && _mouse_point.m_x < 8) {
+	if (_game && !_display_only && _mouse_point.m_x > 0 && _mouse_point.m_x < 8) {
 		// get the x, y position on the board
 		int x = _Col(int(_mouse_point.m_x));
 		int y = _Row(int(_mouse_point.m_y));
@@ -135,7 +140,7 @@ void BoardView::MouseLeftDownEvent(wxMouseEvent& evt) {
 
 			_display[_moving_piece_origin] = Piece();
 			_moving_piece = draggingPiece;
-		_possible_moves = _game->GetBoard().CalculatePossibleMoves(_moving_piece_origin, _game->GetPlayerColor(), _game->GetMoveData());
+			_possible_moves = _game->GetBoard().CalculatePossibleMoves(_moving_piece_origin, _game->GetPlayerColor(), _game->GetMoveData());
 			_current_move = ps::Move(_moving_piece_origin);
 
 			Redraw();
@@ -230,7 +235,7 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 	}
 
 	// draw the coordinates
-	if (_show_coordinates) {
+	if (!_display_only) {
 		gc->SetFont(GetFont(), { 0, 0, 0 });
 
 		for (int i = 0; i < 8; i++) {
@@ -246,6 +251,10 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 
 	if (!_game) {
 		return;
+	}
+
+	if (_display_only) {
+		_display = _game->GetBoard();
 	}
 
 	// draw the origin position
@@ -370,7 +379,7 @@ void BoardView::_PutDown() {
 	// we are no longer dragging the piece, because we just dropped it
 	_is_dragging = false;
 
-	if (!_game) {
+	if (!_game || _display_only) {
 		return;
 	}
 
@@ -454,6 +463,7 @@ NewGameDialog::NewGameDialog(wxWindow *parent) :
 	auto topRightPanel = new wxFlexGridSizer(1, 2, 0, 0);
 	auto colorPanel = new wxFlexGridSizer(3, 1, 0, 0);
 	auto setupPanel = new wxFlexGridSizer(2, 1, 0, 0);
+	auto buttonPanel = new wxFlexGridSizer(1, 2, 0, 0);
 
 	topRightPanel->AddGrowableCol(1, 1);
 	labelPanel->AddGrowableRow(2, 2);
@@ -462,7 +472,10 @@ NewGameDialog::NewGameDialog(wxWindow *parent) :
 	_combo_black = new wxComboBox(this, wxID_ANY, "Human", wxDefault, _PLAYER_CHOICES_COUNT, _PLAYER_CHOICES, wxCB_READONLY);
 	_text_game_setup = new wxTextCtrl(this, wxID_ANY, _DEFAULT_SETUP);
 	_check_default_setup = new wxCheckBox(this, wxID_ANY, "Use default setup");
-	_board_view = new BoardView(this, false);
+	_board_view = new BoardView(this, true);
+
+	auto buttonCancel = new wxButton(this, ID_BUTTON_CANCEL, "Cancel");
+	auto buttonCreate = new wxButton(this, ID_BUTTON_CREATE, "Create");
 
 	_combo_white->SetMinSize(wxSize(172, _combo_white->GetMinHeight()));
 	_combo_black->SetMinSize(wxSize(172, _combo_black->GetMinHeight()));
@@ -502,29 +515,29 @@ NewGameDialog::NewGameDialog(wxWindow *parent) :
 	setupPanel->Add(_text_game_setup, borderSizerFlags);
 	setupPanel->Add(_check_default_setup, wxSizerFlags().Border(wxLEFT | wxBOTTOM | wxRIGHT, 10));
 
+	buttonPanel->Add(buttonCancel, borderSizerFlags);
+	buttonPanel->Add(buttonCreate, borderSizerFlags);
+
 	topRightPanel->Add(colorPanel, 1);
 	topRightPanel->Add(_board_view, wxSizerFlags(1).Right().Border(wxLEFT | wxRIGHT, 10));
 	contentPanel->Add(topRightPanel, wxSizerFlags(1).Expand());
 	contentPanel->Add(setupPanel);
+	contentPanel->Add(buttonPanel, wxSizerFlags(0).Right());
 
 	panel->Add(labelPanel, 0);
 	panel->Add(contentPanel, 1);
 
 	SetSizerAndFit(panel);
 	CenterOnParent();
-
-	// TODO: add 'Create Game' and 'Cancel' buttons.
 }
 
 void NewGameDialog::TextEvent(wxCommandEvent& evt) {
 	if (_game.SetState(std::string(_text_game_setup->GetValue().c_str()))) {
-		std::cout << "valid" << std::endl;
+
 	} else {
-		std::cout << "invalid" << std::endl;
 		_game.SetState(_EMPTY_SETUP);
 	}
 
-	// TODO: properly redraw and also prevent the user from making changes on the board.
 	_board_view->Redraw();
 }
 
@@ -543,6 +556,15 @@ void NewGameDialog::CheckboxEvent(wxCommandEvent& evt) {
 
 		_text_game_setup->Enable(true);
 	}
+}
+
+void NewGameDialog::CancelButtonEvent(wxCommandEvent& evt) {
+	Close(true);
+}
+
+void NewGameDialog::CreateButtonEvent(wxCommandEvent& evt) {
+	// TODO: create the game
+	Close(true);
 }
 
 Window::Window() :
