@@ -79,6 +79,8 @@ BoardView::BoardView(wxWindow *parent, bool displayOnly) :
 
 void BoardView::SetGame(Game *game) {
 	_game = game;
+	_display = _game->GetBoard();
+	Redraw();
 }
 
 void BoardView::PaintEvent(wxPaintEvent& evt) {
@@ -472,10 +474,9 @@ NewGameDialog::NewGameDialog(wxWindow *parent) :
 	_combo_black = new wxComboBox(this, wxID_ANY, "Human", wxDefault, _PLAYER_CHOICES_COUNT, _PLAYER_CHOICES, wxCB_READONLY);
 	_text_game_setup = new wxTextCtrl(this, wxID_ANY, _DEFAULT_SETUP);
 	_check_default_setup = new wxCheckBox(this, wxID_ANY, "Use default setup");
+	_button_cancel = new wxButton(this, ID_BUTTON_CANCEL, "Cancel");
+	_button_create = new wxButton(this, ID_BUTTON_CREATE, "Create");
 	_board_view = new BoardView(this, true);
-
-	auto buttonCancel = new wxButton(this, ID_BUTTON_CANCEL, "Cancel");
-	auto buttonCreate = new wxButton(this, ID_BUTTON_CREATE, "Create");
 
 	_combo_white->SetMinSize(wxSize(172, _combo_white->GetMinHeight()));
 	_combo_black->SetMinSize(wxSize(172, _combo_black->GetMinHeight()));
@@ -515,8 +516,8 @@ NewGameDialog::NewGameDialog(wxWindow *parent) :
 	setupPanel->Add(_text_game_setup, borderSizerFlags);
 	setupPanel->Add(_check_default_setup, wxSizerFlags().Border(wxLEFT | wxBOTTOM | wxRIGHT, 10));
 
-	buttonPanel->Add(buttonCancel, borderSizerFlags);
-	buttonPanel->Add(buttonCreate, borderSizerFlags);
+	buttonPanel->Add(_button_cancel, borderSizerFlags);
+	buttonPanel->Add(_button_create, borderSizerFlags);
 
 	topRightPanel->Add(colorPanel, 1);
 	topRightPanel->Add(_board_view, wxSizerFlags(1).Right().Border(wxLEFT | wxRIGHT, 10));
@@ -533,9 +534,10 @@ NewGameDialog::NewGameDialog(wxWindow *parent) :
 
 void NewGameDialog::TextEvent(wxCommandEvent& evt) {
 	if (_game.SetState(std::string(_text_game_setup->GetValue().c_str()))) {
-
+		_button_create->Enable(true);
 	} else {
 		_game.SetState(_EMPTY_SETUP);
+		_button_create->Enable(false);
 	}
 
 	_board_view->Redraw();
@@ -563,7 +565,7 @@ void NewGameDialog::CancelButtonEvent(wxCommandEvent& evt) {
 }
 
 void NewGameDialog::CreateButtonEvent(wxCommandEvent& evt) {
-	// TODO: create the game
+	static_cast<Window *>(GetParent())->StartGame(_game);
 	Close(true);
 }
 
@@ -581,10 +583,10 @@ Window::Window() :
 	splitter->SetMinimumPaneSize(100);
 	splitter->SetWindowStyle(splitter->GetWindowStyle() | wxSP_LIVE_UPDATE);
 
-	BoardView *left = new BoardView(splitter);
+	_board_view = new BoardView(splitter);
 	wxPanel *right = new wxPanel(splitter, wxID_ANY, wxDefault, wxBORDER_SUNKEN);
 
-	splitter->SplitVertically(left, right);
+	splitter->SplitVertically(_board_view, right);
 
 	wxBoxSizer *topSizer = new wxBoxSizer(wxHORIZONTAL);
 	topSizer->Add(splitter, 1, wxEXPAND);
@@ -594,6 +596,11 @@ Window::Window() :
 void Window::NewGame() {
 	NewGameDialog *newGameDialog = new NewGameDialog(this);
 	newGameDialog->ShowModal();
+}
+
+void Window::StartGame(Game game) {
+	_game = std::move(game);
+	_board_view->SetGame(&game);
 }
 
 }

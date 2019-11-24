@@ -86,6 +86,8 @@ private:
 	wxComboBox *_combo_black;
 	wxTextCtrl *_text_game_setup;
 	wxCheckBox *_check_default_setup;
+	wxButton *_button_cancel;
+	wxButton *_button_create;
 	BoardView *_board_view;
 
 	bool _has_store_game_setup = false;
@@ -107,10 +109,14 @@ public:
 	Window();
 
 	void NewGame();
+	void StartGame(Game game);
 
 private:
 	wxMenuBar *_menu;
 	wxMenu *_menu_game;
+	BoardView *_board_view;
+
+	Game _game;
 
 };
 

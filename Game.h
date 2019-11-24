@@ -18,6 +18,9 @@ class Game {
 public:
 	Game();
 
+	Game(const Game& game) noexcept;
+	Game& operator=(const Game& game) noexcept;
+
 	void Loop();
 
 	bool SetState(const std::string& psFEN);
@@ -35,11 +38,6 @@ public:
 	std::string GetPsFEN() const;
 
 private:
-	Game(const Game&) = delete;
-	Game(Game&&) = delete;
-	Game& operator=(const Game&) = delete;
-	Game& operator=(Game&&) = delete;
-
 	std::unique_ptr<Board> _board;
 	Piece::Color _player_color = Piece::Color::WHITE;
 	GameMoveData _move_data;

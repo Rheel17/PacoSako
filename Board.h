@@ -43,7 +43,7 @@ private:
 	void _AddAllPossibleMoves(const BoardPosition& position, const Piece& piece, Piece::Color color, std::vector<Move>& moves, const GameMoveData& moveData) const;
 	void _AddAllPossibleChainMoves(Move prefix, const Piece& piece, std::vector<Move>& moves, const GameMoveData& moveData) const;
 
-	Piece _squares[8][8] {};
+	std::array<std::array<Piece, 8>, 8> _squares {};
 
 };
 

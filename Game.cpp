@@ -10,6 +10,24 @@ Game::Game() {
 	std::cout << GetPsFEN() << std::endl;
 }
 
+
+Game::Game(const Game& game) noexcept :
+	_board(std::make_unique<Board>(*game._board)),
+	_player_color(std::move(game._player_color)),
+	_move_data(std::move(game._move_data)),
+	_fify_move_rule_count(std::move(game._fify_move_rule_count)),
+	_current_move(std::move(game._current_move)) {}
+
+Game& Game::operator=(const Game& game) noexcept {
+	_board = std::make_unique<Board>(*game._board);
+	_player_color = std::move(game._player_color);
+	_move_data = std::move(game._move_data);
+	_fify_move_rule_count = std::move(game._fify_move_rule_count);
+	_current_move = std::move(game._current_move);
+
+	return *this;
+}
+
 void Game::Loop() {
 
 }
