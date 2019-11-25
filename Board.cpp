@@ -429,7 +429,7 @@ void Board::_AddMoves(const BoardPosition& position, const Piece& piece, Piece::
 std::vector<Move> Board::_GetAllPossibleMoves(bool checkSako, Piece::Color color, const GameMoveData& moveData) const {
 	// TODO: fix bug at
 	// 6UQqn/6k1/UBp2P1UNpp1/4UPnUPb2/P1UPpP4/UNp1URp1UQbK2/4pQ2/1r1UBq1UPr2 b - - 1 92
-	// queening in a chain
+	// queening in a chain doesn't know about the moving piece change
 
 	std::vector<Move> moves;
 	std::vector<Move> temp;
