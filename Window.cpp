@@ -579,6 +579,8 @@ Window::Window() :
 	_menu->Append(_menu_game, L"Game");
 	SetMenuBar(_menu);
 
+	Connect(wxID_NEW, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(Window::NewGame));
+
 	wxSplitterWindow *splitter = new wxSplitterWindow(this);
 	splitter->SetMinimumPaneSize(100);
 	splitter->SetWindowStyle(splitter->GetWindowStyle() | wxSP_LIVE_UPDATE);
@@ -596,6 +598,10 @@ Window::Window() :
 void Window::NewGame() {
 	NewGameDialog *newGameDialog = new NewGameDialog(this);
 	newGameDialog->ShowModal();
+}
+
+void Window::NewGame(wxCommandEvent& evt) {
+	NewGame();
 }
 
 void Window::StartGame(Game game) {

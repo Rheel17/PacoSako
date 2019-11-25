@@ -12,7 +12,7 @@ Game::Game() {
 
 Game::Game(const Game& game) noexcept :
 	_board(std::make_unique<Board>(*game._board)),
-	_player_color(std::move(game._player_color)),
+	_current_player(std::move(game._current_player)),
 	_move_data(std::move(game._move_data)),
 	_fify_move_rule_count(std::move(game._fify_move_rule_count)),
 	_current_move(std::move(game._current_move)) {
@@ -20,12 +20,16 @@ Game::Game(const Game& game) noexcept :
 
 Game& Game::operator=(const Game& game) noexcept {
 	_board = std::make_unique<Board>(*game._board);
-	_player_color = std::move(game._player_color);
+	_current_player = std::move(game._current_player);
 	_move_data = std::move(game._move_data);
 	_fify_move_rule_count = std::move(game._fify_move_rule_count);
 	_current_move = std::move(game._current_move);
 
 	return *this;
+}
+
+void Game::SetPlayers() {
+	// TODO: set players
 }
 
 void Game::Loop() {
@@ -45,9 +49,9 @@ bool Game::SetState(const std::string &psFEN) {
 
 	// read the current player
 	if (*arr == 'w') {
-		_player_color = Piece::Color::WHITE;
+		_current_player = Piece::Color::WHITE;
 	} else {
-		_player_color = Piece::Color::BLACK;
+		_current_player = Piece::Color::BLACK;
 	}
 
 	// read the castling possibilities
@@ -115,14 +119,14 @@ const GameMoveData& Game::GetMoveData() const {
 }
 
 Piece::Color Game::GetPlayerColor() const {
-	return _player_color;
+	return _current_player;
 }
 
 void Game::SwitchPlayerColor() {
-	if (_player_color == Piece::Color::WHITE) {
-		_player_color = Piece::Color::BLACK;
+	if (_current_player == Piece::Color::WHITE) {
+		_current_player = Piece::Color::BLACK;
 	} else {
-		_player_color = Piece::Color::WHITE;
+		_current_player = Piece::Color::WHITE;
 	}
 }
 
@@ -150,16 +154,16 @@ void Game::MakeMove(const Move& move) {
 		const BoardPosition& next = positions.back();
 
 		if (abs(next.GetRow() - prev.GetRow()) == 2 &&
-				_board->GetPiece(next).GetTypeOfColor(_player_color) == Piece::Type::PAWN) {
+				_board->GetPiece(next).GetTypeOfColor(_current_player) == Piece::Type::PAWN) {
 
 			_move_data.en_passant_position = next;
 		}
 	}
 
 	if (positions.size() == 2) {
-		if (_board->GetPiece(positions.back()).GetTypeOfColor(_player_color) == Piece::Type::KING) {
+		if (_board->GetPiece(positions.back()).GetTypeOfColor(_current_player) == Piece::Type::KING) {
 			// the player just moved the king
-			switch (_player_color) {
+			switch (_current_player) {
 				case Piece::Color::WHITE:
 					_move_data.can_white_castle_king_side = false;
 					_move_data.can_white_castle_queen_side = false;
@@ -175,10 +179,10 @@ void Game::MakeMove(const Move& move) {
 	}
 
 	// check if the rooks moved
-	int row = _player_color == Piece::Color::WHITE ? 0 : 7;
-	bool *kingSide = _player_color == Piece::Color::WHITE ?
+	int row = _current_player == Piece::Color::WHITE ? 0 : 7;
+	bool *kingSide = _current_player == Piece::Color::WHITE ?
 			&_move_data.can_white_castle_king_side : &_move_data.can_black_castle_king_side;
-	bool *queenSide = _player_color == Piece::Color::WHITE ?
+	bool *queenSide = _current_player == Piece::Color::WHITE ?
 			&_move_data.can_white_castle_queen_side : &_move_data.can_black_castle_queen_side;
 
 	if (*kingSide || *queenSide) {
@@ -210,7 +214,7 @@ void Game::MakeMove(const Move& move) {
 	// next player
 	SwitchPlayerColor();
 
-	if (_player_color == Piece::Color::WHITE) {
+	if (_current_player == Piece::Color::WHITE) {
 		_current_move++;
 	}
 }
@@ -219,7 +223,7 @@ std::string Game::GetPsFEN() const {
 	std::string boardFEN = _board->GetPsFEN();
 	boardFEN += ' ';
 
-	if (_player_color == Piece::Color::WHITE) {
+	if (_current_player == Piece::Color::WHITE) {
 		boardFEN += 'w';
 	} else {
 		boardFEN += 'b';

@@ -109,6 +109,7 @@ public:
 	Window();
 
 	void NewGame();
+	void NewGame(wxCommandEvent& evt);
 	void StartGame(Game game);
 
 private:

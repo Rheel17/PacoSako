@@ -8,6 +8,7 @@
 #include <memory>
 #include <mutex>
 
+#include "Player.h"
 #include "Board.h"
 #include "GameMoveData.h"
 
@@ -23,6 +24,8 @@ public:
 
 	Game(Game&&) = default;
 	Game& operator=(Game&&) = default;
+
+	void SetPlayers();
 
 	void Loop();
 
@@ -42,7 +45,11 @@ public:
 
 private:
 	std::unique_ptr<Board> _board;
-	Piece::Color _player_color = Piece::Color::WHITE;
+
+	std::unique_ptr<Player> _player_white;
+	std::unique_ptr<Player> _player_black;
+	Piece::Color _current_player = Piece::Color::WHITE;
+
 	GameMoveData _move_data;
 	int _fify_move_rule_count = 0;
 	int _current_move = 1;
