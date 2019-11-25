@@ -25,11 +25,14 @@ public:
 	Game(Game&&) = default;
 	Game& operator=(Game&&) = default;
 
-	void SetPlayers();
-
-	void Loop();
+	/**
+	 * The game will take ownership of the players.
+	 */
+	void SetPlayers(Player *white, Player *black);
 
 	bool SetState(const std::string& psFEN);
+
+	void StartThread(void *window);
 
 	const Board& GetBoard() const;
 
@@ -44,6 +47,8 @@ public:
 	std::string GetPsFEN() const;
 
 private:
+	void _Loop();
+
 	std::unique_ptr<Board> _board;
 
 	std::unique_ptr<Player> _player_white;

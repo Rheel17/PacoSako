@@ -8,11 +8,17 @@
 
 namespace ps {
 
+class Window;
+
 class PlayerHuman : public Player {
 
 public:
-	PlayerHuman(Piece::Color playerColor);
-	~PlayerHuman();
+	PlayerHuman(Piece::Color playerColor, Window *window);
+
+	Move MakeMove(const Board& board, const GameMoveData& moveData) override;
+
+private:
+	Window *_window;
 
 };
 

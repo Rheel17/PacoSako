@@ -3,12 +3,15 @@
  */
 #include "Game.h"
 
+#include <cassert>
+
+#include "PlayerHuman.h"
+
 namespace ps {
 
 Game::Game() {
 	_board = std::make_unique<Board>();
 }
-
 
 Game::Game(const Game& game) noexcept :
 	_board(std::make_unique<Board>(*game._board)),
@@ -28,12 +31,9 @@ Game& Game::operator=(const Game& game) noexcept {
 	return *this;
 }
 
-void Game::SetPlayers() {
-	// TODO: set players
-}
-
-void Game::Loop() {
-
+void Game::SetPlayers(Player *white, Player *black) {
+	_player_white = std::unique_ptr<Player>(white);
+	_player_black = std::unique_ptr<Player>(black);
 }
 
 bool Game::SetState(const std::string &psFEN) {
@@ -108,6 +108,14 @@ bool Game::SetState(const std::string &psFEN) {
 	_current_move = strtol(arr, &end, 10);
 
 	return true;
+}
+
+void Game::StartThread(void *window) {
+	assert(_player_white && _player_black);
+
+	_game_thread = std::unique_ptr<std::thread>(new std::thread([](Game *game){
+		game->_Loop();
+	}, this));
 }
 
 const Board& Game::GetBoard() const {
@@ -264,6 +272,20 @@ std::string Game::GetPsFEN() const {
 	boardFEN += std::to_string(_current_move);
 
 	return boardFEN;
+}
+
+void Game::_Loop() {
+	while (true) {
+		std::cout << "white: " << std::flush;
+		Move whiteMove = _player_white->MakeMove(*_board, _move_data);
+		std::cout << whiteMove << std::endl;
+		MakeMove(whiteMove);
+
+		std::cout << "black: " << std::flush;
+		Move blackMove = _player_black->MakeMove(*_board, _move_data);
+		std::cout << blackMove << std::endl;
+		MakeMove(blackMove);
+	}
 }
 
 }

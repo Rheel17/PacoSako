@@ -9,6 +9,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <future>
 
 #include "Player.h"
 #include "Game.h"
@@ -22,6 +23,7 @@ public:
 	BoardView(wxWindow *parent, bool displayOnly = false);
 
 	void SetGame(Game *game);
+	void SetPlayerColor(Piece::Color playerColor);
 
     void PaintEvent(wxPaintEvent& evt);
     void SizeEvent(wxSizeEvent& evt);
@@ -40,6 +42,7 @@ private:
 	void _DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble boardPosition);
 
 	void _PutDown();
+	void _FinishMove();
 
 	Board _display;
 	bool _display_only;
@@ -47,6 +50,7 @@ private:
 	int _tile_size = _MINIMUM_TILE_SIZE;
 
 	Game *_game = nullptr;
+	Piece::Color _player_color = Piece::Color::EMPTY;
 
 	bool _mouse_down = false;
 	bool _is_dragging = false;
@@ -70,11 +74,13 @@ private:
 
 };
 
+class Window;
+
 class NewGameDialog : public wxDialog {
 	wxDECLARE_EVENT_TABLE();
 
 public:
-	NewGameDialog(wxWindow *parent);
+	NewGameDialog(Window *parent);
 
 	void TextEvent(wxCommandEvent& evt);
 	void CheckboxEvent(wxCommandEvent& evt);
@@ -82,6 +88,8 @@ public:
 	void CreateButtonEvent(wxCommandEvent& evt);
 
 private:
+	Window *_parent;
+
 	wxComboBox *_combo_white;
 	wxComboBox *_combo_black;
 	wxTextCtrl *_text_game_setup;
@@ -104,6 +112,7 @@ private:
 };
 
 class Window : public wxFrame {
+	friend class BoardView;
 
 public:
 	Window();
@@ -112,12 +121,18 @@ public:
 	void NewGame(wxCommandEvent& evt);
 	void StartGame(Game game);
 
+	std::future<ps::Move> StartMove(Piece::Color playerColor);
+
 private:
+	void _MakeMove(const ps::Move& move);
+
 	wxMenuBar *_menu;
 	wxMenu *_menu_game;
 	BoardView *_board_view;
 
 	Game _game;
+
+	std::promise<ps::Move> _move;
 
 };
 

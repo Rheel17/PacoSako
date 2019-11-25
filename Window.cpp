@@ -8,6 +8,9 @@
 #include <wx/wfstream.h>
 #include <wx/graphics.h>
 
+#include "PlayerHuman.h"
+#include "AiRandom.h"
+
 #define wxDefault wxDefaultPosition, wxDefaultSize
 
 namespace ps {
@@ -83,6 +86,10 @@ void BoardView::SetGame(Game *game) {
 	Redraw();
 }
 
+void BoardView::SetPlayerColor(Piece::Color playerColor) {
+	_player_color = playerColor;
+}
+
 void BoardView::PaintEvent(wxPaintEvent& evt) {
 	auto size = GetClientSize();
 	_tile_size = std::min(size.x, size.y) / 9;
@@ -137,12 +144,12 @@ void BoardView::MouseLeftDownEvent(wxMouseEvent& evt) {
 		// get the piece at the clicked square
 		const Piece& draggingPiece = _game->GetBoard()[_moving_piece_origin];
 
-		if (draggingPiece.GetColor() == _game->GetPlayerColor() || draggingPiece.GetColor() == Piece::Color::UNION) {
+		if (draggingPiece.GetColor() == _player_color || draggingPiece.GetColor() == Piece::Color::UNION) {
 			// we can pick up the current piece; so pick it up
 
 			_display[_moving_piece_origin] = Piece();
 			_moving_piece = draggingPiece;
-			_possible_moves = _game->GetBoard().CalculatePossibleMoves(_moving_piece_origin, _game->GetPlayerColor(), _game->GetMoveData());
+			_possible_moves = _game->GetBoard().CalculatePossibleMoves(_moving_piece_origin, _player_color, _game->GetMoveData());
 			_current_move = ps::Move(_moving_piece_origin);
 
 			Redraw();
@@ -396,7 +403,7 @@ void BoardView::_PutDown() {
 
 		// check for en passant
 		if (_game->GetBoard()[_mouse_position].GetColor() == Piece::Color::EMPTY &&
-				_moving_piece.GetTypeOfColor(_game->GetPlayerColor()) == Piece::Type::PAWN &&
+				_moving_piece.GetTypeOfColor(_player_color) == Piece::Type::PAWN &&
 				_moving_piece_origin.GetColumn() != _mouse_position.GetColumn()) {
 
 			// this was an en passant move
@@ -409,11 +416,11 @@ void BoardView::_PutDown() {
 				_display[_mouse_position] = original;
 				_moving_piece = _display[_mouse_position].MakeUnionWith(_moving_piece);
 				_moving_piece_origin = _mouse_position;
-				_possible_moves = _display.CalculatePossibleMoves(_moving_piece_origin, _moving_piece, _game->GetPlayerColor(), _game->GetMoveData());
+				_possible_moves = _display.CalculatePossibleMoves(_moving_piece_origin, _moving_piece, _player_color, _game->GetMoveData());
 				return;
 			} else {
 				// the target was not a union, so finish the move.
-				_game->MakeMove(_current_move);
+				_FinishMove();
 			}
 		} else {
 			// this was not an en passant move
@@ -436,13 +443,13 @@ void BoardView::_PutDown() {
 
 				_moving_piece = _display[_mouse_position].MakeUnionWith(_moving_piece);
 				_moving_piece_origin = _mouse_position;
-				_possible_moves = _display.CalculatePossibleMoves(_moving_piece_origin, _moving_piece, _game->GetPlayerColor(), _game->GetMoveData());
+				_possible_moves = _display.CalculatePossibleMoves(_moving_piece_origin, _moving_piece, _player_color, _game->GetMoveData());
 				return;
 			} else {
 				// the target was not a union, so finish the move.
 				// TODO: check if a pawn promotion happened and if so, let the
 				// player choose a piece.
-				_game->MakeMove(_current_move);
+				_FinishMove();
 			}
 		}
 	}
@@ -456,8 +463,13 @@ void BoardView::_PutDown() {
 	_display = _game->GetBoard();
 }
 
-NewGameDialog::NewGameDialog(wxWindow *parent) :
-		wxDialog(parent, wxID_ANY, "New Game") {
+void BoardView::_FinishMove() {
+	static_cast<Window *>(GetGrandParent())->_MakeMove(_current_move);
+}
+
+NewGameDialog::NewGameDialog(Window *parent) :
+		wxDialog(parent, wxID_ANY, "New Game"),
+		_parent(parent) {
 
 	auto panel = new wxBoxSizer(wxHORIZONTAL);
 	auto labelPanel = new wxFlexGridSizer(5, 1, 0, 0);
@@ -565,7 +577,7 @@ void NewGameDialog::CancelButtonEvent(wxCommandEvent& evt) {
 }
 
 void NewGameDialog::CreateButtonEvent(wxCommandEvent& evt) {
-	static_cast<Window *>(GetParent())->StartGame(_game);
+	_parent->StartGame(_game);
 	Close(true);
 }
 
@@ -596,8 +608,8 @@ Window::Window() :
 }
 
 void Window::NewGame() {
-	NewGameDialog *newGameDialog = new NewGameDialog(this);
-	newGameDialog->ShowModal();
+	NewGameDialog newGameDialog(this);
+	newGameDialog.ShowModal();
 }
 
 void Window::NewGame(wxCommandEvent& evt) {
@@ -607,6 +619,21 @@ void Window::NewGame(wxCommandEvent& evt) {
 void Window::StartGame(Game game) {
 	_game = std::move(game);
 	_board_view->SetGame(&_game);
+	_board_view->SetPlayerColor(Piece::Color::EMPTY);
+
+	_game.SetPlayers(new PlayerHuman(Piece::Color::WHITE, this), new PlayerHuman(Piece::Color::BLACK, this));
+	_game.StartThread(this);
+}
+
+std::future<ps::Move> Window::StartMove(Piece::Color playerColor) {
+	_board_view->SetPlayerColor(playerColor);
+	_move = std::promise<ps::Move>();
+	return _move.get_future();
+}
+
+void Window::_MakeMove(const ps::Move& move) {
+	_move.set_value(move);
+	_board_view->SetPlayerColor(Piece::Color::EMPTY);
 }
 
 }
