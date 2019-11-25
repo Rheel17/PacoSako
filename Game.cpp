@@ -60,46 +60,62 @@ bool Game::SetState(const std::string &psFEN) {
 	// read the current player
 	if (*arr == 'w') {
 		_current_player = Piece::Color::WHITE;
-	} else {
+	} else if (*arr == 'b') {
 		_current_player = Piece::Color::BLACK;
+	} else {
+		return false;
 	}
+
+	if (*(arr + 1) != ' ') {
+		return false;
+	}
+
 
 	// read the castling possibilities
 	arr += 2;
 
 	if (*arr == '-') {
+		if (*(arr + 1) != ' ') {
+			return false;
+		}
+
 		arr += 2;
 	} else {
-		if (*arr == 'K') {
-			_move_data.can_white_castle_king_side = true;
-			arr++;
-		}
+		if (*arr != 'K' && *arr != 'Q' && *arr != 'k' && *arr != 'q') { return false; }
+		if (*arr == 'K') { _move_data.can_white_castle_king_side  = true; arr++; }
 
-		if (*arr == 'Q') {
-			_move_data.can_white_castle_queen_side = true;
-			arr++;
-		}
+		if (*arr != 'Q' && *arr != 'k' && *arr != 'q' && *arr != ' ') { return false; }
+		if (*arr == 'Q') { _move_data.can_white_castle_queen_side = true; arr++; }
 
-		if (*arr == 'k') {
-			_move_data.can_black_castle_king_side = true;
-			arr++;
-		}
+		if (*arr != 'k' && *arr != 'q' && *arr != ' ') { return false; }
+		if (*arr == 'k') { _move_data.can_black_castle_king_side  = true; arr++; }
 
-		if (*arr == 'q') {
-			_move_data.can_black_castle_queen_side = true;
-			arr++;
-		}
+		if (*arr != 'q' && *arr != ' ') { return false; }
+		if (*arr == 'q') { _move_data.can_black_castle_queen_side = true; arr++; }
 
+		if (*arr != ' ') { return false; }
 		arr++;
 	}
 
 	// read the en passant position
 	if (*arr == '-') {
+		if (*(arr + 1) != ' ') {
+			return false;
+		}
+
 		arr += 2;
 	} else {
 		int ep[2] = { *arr, *(arr + 1) };
 		ep[0] -= 'a';
 		ep[1] -= '0';
+
+		if (ep[0] < 0 || ep[0] > 7 || ep[1] < 0 || ep[1] > 7) {
+			return false;
+		}
+
+		if (*(arr + 2) != ' ') {
+			return false;
+		}
 
 		if (ep[1] <= 3) {
 			ep[1]++;
@@ -114,8 +130,27 @@ bool Game::SetState(const std::string &psFEN) {
 	// read the move counts
 	char *end;
 	_fify_move_rule_count = strtol(arr, &end, 10);
-	arr = end + 1;
+
+	if (end == arr) {
+		return false;
+	}
+
+	arr = end;
+	if (*arr != ' ') {
+		return false;
+	}
+	arr++;
+
 	_current_move = strtol(arr, &end, 10);
+
+	if (end == arr) {
+		return false;
+	}
+
+	arr = end;
+	if (*arr != 0) {
+		return false;
+	}
 
 	return true;
 }
@@ -255,7 +290,7 @@ std::string Game::GetPsFEN() const {
 		if (_move_data.can_white_castle_king_side) boardFEN += 'K';
 		if (_move_data.can_white_castle_queen_side) boardFEN += 'Q';
 		if (_move_data.can_black_castle_king_side) boardFEN += 'k';
-		if (_move_data.can_black_castle_queen_side) boardFEN += 'w';
+		if (_move_data.can_black_castle_queen_side) boardFEN += 'q';
 
 		boardFEN += ' ';
 	} else {
@@ -289,12 +324,14 @@ void Game::_Loop(Window *window) {
 	bool isBlackPlayerHuman = (bool) dynamic_cast<PlayerHuman *>(_player_black.get());
 
 	while (!_game_thread_close) {
-		if (!_MakeMove(*_player_white, window, isWhitePlayerHuman)) {
-			break;
-		}
-
-		if (!_MakeMove(*_player_black, window, isBlackPlayerHuman)) {
-			break;
+		if (_current_player == Piece::Color::WHITE) {
+			if (!_MakeMove(*_player_white, window, isWhitePlayerHuman)) {
+				break;
+			}
+		} else {
+			if (!_MakeMove(*_player_black, window, isBlackPlayerHuman)) {
+				break;
+			}
 		}
 	}
 }

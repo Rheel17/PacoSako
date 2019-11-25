@@ -107,7 +107,7 @@ private:
 	Game _game;
 
 private:
-	static constexpr auto _DEFAULT_SETUP = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkw - 0 1";
+	static constexpr auto _DEFAULT_SETUP = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 	static constexpr auto _EMPTY_SETUP = "8/8/8/8/8/8/8/8 w - - 0 1";
 	static constexpr int _PLAYER_CHOICES_COUNT = 2;
 	const static wxString _PLAYER_CHOICES[_PLAYER_CHOICES_COUNT];
