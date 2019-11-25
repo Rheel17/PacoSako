@@ -10,8 +10,11 @@
 
 #include <array>
 #include <vector>
+#include <unordered_set>
 
 namespace ps {
+
+struct ChainHashKey;
 
 class Board {
 
@@ -27,6 +30,8 @@ public:
 	const Piece& operator[](const BoardPosition& position) const;
 	Piece& operator[](const BoardPosition& position);
 
+	bool operator==(const Board& board) const;
+
 	std::vector<Move> GetAllPossibleMoves(Piece::Color color, const GameMoveData& moveData) const;
 	std::vector<BoardPosition> CalculatePossibleMoves(const BoardPosition& piece, Piece::Color playerColor, const GameMoveData& moveData, bool checkSako = true) const;
 	std::vector<BoardPosition> CalculatePossibleMoves(const BoardPosition& origin, const Piece& piece, Piece::Color playerColor, const GameMoveData& moveData, bool checkSako = true) const;
@@ -40,11 +45,45 @@ private:
 	void _AddMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec, std::array<BoardPosition, 4> dps) const;
 
 	std::vector<Move> _GetAllPossibleMoves(bool checkSako, Piece::Color color, const GameMoveData& moveData) const;
-	void _AddAllPossibleMoves(const BoardPosition& position, const Piece& piece, Piece::Color color, std::vector<Move>& moves, const GameMoveData& moveData) const;
-	void _AddAllPossibleChainMoves(Move prefix, const Piece& piece, std::vector<Move>& moves, const GameMoveData& moveData) const;
+	void _AddAllPossibleMoves(const BoardPosition& position, const Piece& piece, Piece::Color color, std::vector<Move>& moves, const GameMoveData& moveData, bool checkSako) const;
+	void _AddAllPossibleChainMoves(Move prefix, bool lastEnPassant, const Piece& piece, std::vector<Move>& moves, const GameMoveData& moveData, std::unordered_set<ChainHashKey>& seenConfigs) const;
 
 	std::array<std::array<Piece, 8>, 8> _squares {};
 
+};
+
+struct ChainHashKey {
+	Board board;
+	Piece moving_piece;
+
+	bool operator==(const ChainHashKey& key) const;
+};
+
+}
+
+namespace std{
+
+template<>
+struct hash<ps::Board> {
+	size_t operator()(const ps::Board& board) const {
+		size_t result = 29;
+		for (int r = 0; r < 8; r++) {
+			for (int c = 0; c < 8; c++) {
+				result = result * 31 + hash<ps::Piece>()(board[{ r, c }]);
+			}
+		}
+		return result;
+	}
+};
+
+template<>
+struct hash<ps::ChainHashKey> {
+	size_t operator()(const ps::ChainHashKey& key) const {
+		size_t result = 29;
+		result = 997 * result + hash<ps::Board>()(key.board);
+		result = 997 * result + hash<ps::Piece>()(key.moving_piece);
+		return result;
+	}
 };
 
 }

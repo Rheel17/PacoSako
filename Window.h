@@ -134,6 +134,9 @@ public:
 	std::future<ps::Move> StartMove(Piece::Color playerColor);
 	void FinishMove(const ps::Move& move, bool fromHuman);
 
+	void Mate();
+	void Stalemate();
+
 private:
 	void _MakeMove(const ps::Move& move);
 

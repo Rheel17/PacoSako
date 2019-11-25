@@ -163,6 +163,10 @@ Piece& Board::operator[](const BoardPosition& position) {
 	return _squares[position.GetRow()][position.GetColumn()];
 }
 
+bool Board::operator==(const Board& board) const {
+	return _squares == board._squares;
+}
+
 std::vector<Move> Board::GetAllPossibleMoves(Piece::Color color, const GameMoveData& moveData) const {
 	return _GetAllPossibleMoves(true, color, moveData);
 }
@@ -226,11 +230,18 @@ void Board::_AddPawnMoves(const BoardPosition &position, const Piece& piece, Pie
 
 		// handle en passant cases
 		if (moveData.en_passant_position.IsValid()) {
-			if (moveData.en_passant_position.GetRow() == position.GetRow() &&
-					abs(moveData.en_passant_position.GetColumn() - position.GetColumn()) == 1) {
+			int moveToRow = moveData.en_passant_position.GetRow();
+			if (moveToRow <= 3) {
+				moveToRow--;
+			} else {
+				moveToRow++;
+			}
 
-				vec.push_back({ moveData.en_passant_position.GetRow() + forward,
-					moveData.en_passant_position.GetColumn() });
+			if (moveData.en_passant_position.GetRow() == position.GetRow() &&
+					abs(moveData.en_passant_position.GetColumn() - position.GetColumn()) == 1 &&
+					position.GetRow() + forward == moveToRow) {
+
+				vec.push_back({ moveToRow, moveData.en_passant_position.GetColumn() });
 			}
 		}
 	}
@@ -416,6 +427,10 @@ void Board::_AddMoves(const BoardPosition& position, const Piece& piece, Piece::
 }
 
 std::vector<Move> Board::_GetAllPossibleMoves(bool checkSako, Piece::Color color, const GameMoveData& moveData) const {
+	// TODO: fix bug at
+	// 6UQqn/6k1/UBp2P1UNpp1/4UPnUPb2/P1UPpP4/UNp1URp1UQbK2/4pQ2/1r1UBq1UPr2 b - - 1 92
+	// queening in a chain
+
 	std::vector<Move> moves;
 	std::vector<Move> temp;
 	Board dummy;
@@ -429,29 +444,24 @@ std::vector<Move> Board::_GetAllPossibleMoves(bool checkSako, Piece::Color color
 			if (piece.GetTypeOfColor(color) != Piece::Type::NONE) {
 				if (checkSako) {
 					temp.clear();
-					_AddAllPossibleMoves(position, piece, color, temp, moveData);
+					_AddAllPossibleMoves(position, piece, color, temp, moveData, checkSako);
 
 					for (const Move& move : temp) {
 						dummy = *this;
 						move.PerformOn(dummy);
 
 						auto dummyMoves = dummy._GetAllPossibleMoves(false, otherColor, moveData);
-						bool sako = false;
-
-						for (const auto& dummyMove : dummyMoves) {
+						bool sako = std::any_of(dummyMoves.begin(), dummyMoves.end(), [dummy, color](const auto& dummyMove) {
 							const auto& positions = dummyMove.GetPositions();
-							if (GetPiece(positions.back()).GetTypeOfColor(color) == Piece::Type::KING) {
-								sako = true;
-								break;
-							}
-						}
+							return dummy[positions.back()].GetTypeOfColor(color) == Piece::Type::KING;
+						});
 
 						if (!sako) {
 							moves.push_back(std::move(move));
 						}
 					}
 				} else {
-					_AddAllPossibleMoves(position, piece, color, moves, moveData);
+					_AddAllPossibleMoves(position, piece, color, moves, moveData, checkSako);
 				}
 			}
 		}
@@ -460,43 +470,83 @@ std::vector<Move> Board::_GetAllPossibleMoves(bool checkSako, Piece::Color color
 	return moves;
 }
 
-void Board::_AddAllPossibleMoves(const BoardPosition& position, const Piece& piece, Piece::Color color, std::vector<Move>& moves, const GameMoveData& moveData) const {
-	auto initialMoves = CalculatePossibleMoves(position, piece, color, moveData, false);
+void Board::_AddAllPossibleMoves(const BoardPosition& position, const Piece& piece, Piece::Color color, std::vector<Move>& moves, const GameMoveData& moveData, bool checkSako) const {
+	auto initialMoves = CalculatePossibleMoves(position, piece, color, moveData, checkSako);
 	for (const auto& move : initialMoves) {
+		Piece toPiece = GetPiece(move);
+		bool enPassant = false;
+
+		// check for en passant
+		if (GetPiece(move).GetColor() == Piece::Color::EMPTY &&
+				piece.GetTypeOfColor(color) == Piece::Type::PAWN &&
+				move.GetColumn() != position.GetColumn()) {
+
+			toPiece = GetPiece(moveData.en_passant_position);
+			enPassant = true;
+		}
+
 		if (piece.GetColor() == Piece::Color::UNION ||
-				GetPiece(move).GetColor() == Piece::Color::EMPTY) {
+				toPiece.GetColor() == Piece::Color::EMPTY) {
 			Move& m = moves.emplace_back(position);
 			m.AddPosition(move);
 		} else {
 			Move prefix(position);
 			prefix.AddPosition(move);
-			_AddAllPossibleChainMoves(std::move(prefix), piece, moves, moveData);
+			std::unordered_set<ChainHashKey> seenConfigs{};
+			_AddAllPossibleChainMoves(std::move(prefix), enPassant, piece, moves, moveData, seenConfigs);
 		}
 	}
 }
 
-void Board::_AddAllPossibleChainMoves(Move prefix, const Piece& piece, std::vector<Move>& moves, const GameMoveData& moveData) const {
-	const BoardPosition& position = prefix.GetPositions().back();
+void Board::_AddAllPossibleChainMoves(Move prefix, bool lastEnPassant, const Piece& piece, std::vector<Move>& moves, const GameMoveData& moveData, std::unordered_set<ChainHashKey>& seenConfigs) const {
+	ChainHashKey currentConfig = { *this, piece };
+	if (const auto& [iter, didInsert] = seenConfigs.insert(currentConfig); !didInsert) {
+		return;
+	}
 
-	if (piece.GetColor() == opposite(GetPiece(position).GetColor())) {
+	const BoardPosition& position = prefix.GetPositions().back();
+	const Piece& fromPiece = lastEnPassant ? GetPiece(moveData.en_passant_position) : GetPiece(position);
+
+	if (piece.GetColor() == opposite(fromPiece.GetColor())) {
 		moves.push_back(prefix);
 		return;
 	}
 
 	Board dummy(*this);
+
+	if (lastEnPassant) {
+		dummy[position] = dummy[moveData.en_passant_position];
+		dummy[moveData.en_passant_position] = Piece();
+	}
+
 	Piece movingPiece = dummy[position].MakeUnionWith(piece);
 	auto pieceMoves = dummy.CalculatePossibleMoves(position, movingPiece, movingPiece.GetColor(), moveData, false);
 
 	for (const auto& move : pieceMoves) {
-		if (dummy[move].GetColor() != Piece::Color::UNION) {
+		Piece toPiece = dummy[move];
+		bool enPassant = false;
+
+		if (toPiece.GetColor() == Piece::Color::EMPTY &&
+				movingPiece.GetTypeOfColor(movingPiece.GetColor()) == Piece::Type::PAWN &&
+				move.GetColumn() != position.GetColumn()) {
+
+			toPiece = dummy[moveData.en_passant_position];
+			enPassant = true;
+		}
+
+		if (toPiece.GetColor() != Piece::Color::UNION) {
 			Move& m = moves.emplace_back(prefix);
 			m.AddPosition(move);
 		} else {
 			Move newPrefix(prefix);
 			newPrefix.AddPosition(move);
-			dummy._AddAllPossibleChainMoves(newPrefix, movingPiece, moves, moveData);
+			dummy._AddAllPossibleChainMoves(newPrefix, enPassant, movingPiece, moves, moveData, seenConfigs);
 		}
 	}
+}
+
+bool ChainHashKey::operator==(const ChainHashKey& key) const {
+	return key.board == board && key.moving_piece == moving_piece;
 }
 
 }

@@ -13,7 +13,7 @@ AiRandom::AiRandom(Piece::Color playerColor) :
 	 Ai(playerColor), _rng(time(nullptr)) {}
 
 Move AiRandom::MakeMove(const Board& board, const GameMoveData& moveData, std::atomic_bool& stop) {
-	std::this_thread::sleep_for(std::chrono::milliseconds(250));
+	std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
 	const auto& moves = board.GetAllPossibleMoves(_player_color, moveData);
 	std::uniform_int_distribution<size_t> dist(0, moves.size() - 1);

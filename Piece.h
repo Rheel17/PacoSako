@@ -33,6 +33,8 @@ public:
 	 */
 	Piece MakeUnionWith(const Piece& other);
 
+	bool operator==(const Piece& piece) const;
+
 	friend std::ostream& operator<<(std::ostream& out, const Piece& piece);
 
 private:
@@ -49,6 +51,17 @@ char getTypeCharWhite(Piece::Type t);
 char getTypeCharBlack(Piece::Type t);
 Piece::Type getTypeWhite(char c);
 Piece::Type getTypeBlack(char c);
+
+}
+
+namespace std {
+
+template<>
+struct hash<ps::Piece> {
+	inline size_t operator()(const ps::Piece& p) const {
+		return size_t(p.GetBlackType()) << 4 | size_t(p.GetWhiteType());
+	}
+};
 
 }
 

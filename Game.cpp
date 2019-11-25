@@ -4,6 +4,7 @@
 #include "Game.h"
 
 #include <cassert>
+#include <unordered_set>
 
 #include "PlayerHuman.h"
 #include "Window.h"
@@ -107,7 +108,7 @@ bool Game::SetState(const std::string &psFEN) {
 	} else {
 		int ep[2] = { *arr, *(arr + 1) };
 		ep[0] -= 'a';
-		ep[1] -= '0';
+		ep[1] -= '1';
 
 		if (ep[0] < 0 || ep[0] > 7 || ep[1] < 0 || ep[1] > 7) {
 			return false;
@@ -123,7 +124,7 @@ bool Game::SetState(const std::string &psFEN) {
 			ep[1]--;
 		}
 
-		_move_data.en_passant_position = { ep[0], ep[1] };
+		_move_data.en_passant_position = { ep[1], ep[0] };
 		arr += 3;
 	}
 
@@ -324,6 +325,41 @@ void Game::_Loop(Window *window) {
 	bool isBlackPlayerHuman = (bool) dynamic_cast<PlayerHuman *>(_player_black.get());
 
 	while (!_game_thread_close) {
+		// check that moves are possible
+		const auto& allMoves = _board->GetAllPossibleMoves(_current_player, _move_data);
+
+		if (allMoves.empty()) {
+			// either mate or stalemate
+			const auto& oppositeMoves = _board->GetAllPossibleMoves(opposite(_current_player), _move_data);
+			if (std::any_of(oppositeMoves.begin(), oppositeMoves.end(), [this, window](const auto& move) {
+				return _board->GetPiece(move.GetPositions().back()).GetTypeOfColor(_current_player) == Piece::Type::KING;
+			})) {
+				std::cout << "Mate" << std::endl;
+				window->Mate();
+			} else {
+				std::cout << "Stalemate" << std::endl;
+				window->Stalemate();
+			}
+
+			break;
+		}
+
+		// check that not all pieces are a union
+		int unionCount = 0;
+		for (int r = 0; r < 8; r++) {
+			for (int c = 0; c < 8; c++) {
+				if (_board->GetPiece({ r, c }).GetColor() == Piece::Color::UNION) {
+					unionCount++;
+				}
+			}
+		}
+
+		if (unionCount == 15) {
+			std::cout << "Stalemate" << std::endl;
+			window->Stalemate();
+			break;
+		}
+
 		if (_current_player == Piece::Color::WHITE) {
 			if (!_MakeMove(*_player_white, window, isWhitePlayerHuman)) {
 				break;
@@ -342,8 +378,8 @@ bool Game::_MakeMove(Player& player, Window *window, bool isHuman) {
 		return false;
 	}
 
-	MakeMove(move);
 	std::cout << move << std::endl;
+	MakeMove(move);
 	std::cout << GetPsFEN() << std::endl;
 
 	window->GetEventHandler()->CallAfter([window, move, isHuman]() {
@@ -351,7 +387,6 @@ bool Game::_MakeMove(Player& player, Window *window, bool isHuman) {
 	});
 
 	return true;
-	// TODO: check for mate
 }
 
 }

@@ -3,7 +3,7 @@
  */
 #include "Move.h"
 
-#include <cassert>
+//#include <cassert>
 
 #include "Board.h"
 
@@ -19,6 +19,12 @@ void Move::AddPosition(BoardPosition to) {
 
 const std::vector<BoardPosition>& Move::GetPositions() const {
 	return _positions;
+}
+
+static void assert(bool b) {
+	if (!b) {
+		abort();
+	}
 }
 
 void Move::PerformOn(Board &board) const {

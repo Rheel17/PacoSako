@@ -593,8 +593,6 @@ void NewGameDialog::CreateButtonEvent(wxCommandEvent& evt) {
 }
 
 Player *NewGameDialog::_CreatePlayer(wxComboBox *comboBox, Piece::Color color) {
-	std::cout << comboBox->GetCurrentSelection() << std::endl;
-
 	switch (comboBox->GetCurrentSelection()) {
 		case 0: return new PlayerHuman(color, _parent);
 		case 1: return new AiRandom(color);
@@ -671,6 +669,14 @@ void Window::FinishMove(const ps::Move& move, bool fromHuman) {
 		_board_view->ResetDisplay();
 		_board_view->Redraw();
 	}
+}
+
+void Window::Mate() {
+
+}
+
+void Window::Stalemate() {
+
 }
 
 void Window::_MakeMove(const ps::Move& move) {

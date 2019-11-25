@@ -3,8 +3,6 @@
  */
 #include "Piece.h"
 
-#include <cassert>
-
 #include "Board.h"
 
 namespace ps {
@@ -56,6 +54,12 @@ Piece::Color Piece::GetColor() const {
 	return _color;
 }
 
+static void assert(bool b) {
+	if (!b) {
+		abort();
+	}
+}
+
 Piece Piece::MakeUnionWith(const Piece& other) {
 	assert(other.GetColor() != Color::EMPTY);
 	assert(other.GetColor() != Color::UNION);
@@ -73,6 +77,10 @@ Piece Piece::MakeUnionWith(const Piece& other) {
 		_black_type = other.GetBlackType();
 		return result;
 	}
+}
+
+bool Piece::operator==(const Piece& piece) const {
+	return piece._white_type == _white_type && piece._black_type == _black_type;
 }
 
 std::ostream& operator<<(std::ostream& out, const Piece& piece) {
