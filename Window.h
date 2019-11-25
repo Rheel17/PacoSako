@@ -89,6 +89,8 @@ public:
 	void CreateButtonEvent(wxCommandEvent& evt);
 
 private:
+	Player *_CreatePlayer(wxComboBox *comboBox, Piece::Color color);
+
 	Window *_parent;
 
 	wxComboBox *_combo_white;
@@ -127,7 +129,7 @@ public:
 
 	void NewGame();
 	void NewGame(wxCommandEvent& evt);
-	void StartGame(Game game);
+	void StartGame(Game game, Player *white, Player *black);
 
 	std::future<ps::Move> StartMove(Piece::Color playerColor);
 	void FinishMove(const ps::Move& move, bool fromHuman);

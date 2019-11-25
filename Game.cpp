@@ -289,34 +289,32 @@ void Game::_Loop(Window *window) {
 	bool isBlackPlayerHuman = (bool) dynamic_cast<PlayerHuman *>(_player_black.get());
 
 	while (!_game_thread_close) {
-		std::cout << "white: " << std::flush;
-		Move whiteMove = _player_white->MakeMove(*_board, _move_data, _game_thread_close);
-
-		if (_game_thread_close) {
+		if (!_MakeMove(*_player_white, window, isWhitePlayerHuman)) {
 			break;
 		}
 
-		std::cout << whiteMove << std::endl;
-		MakeMove(whiteMove);
-
-		window->GetEventHandler()->CallAfter([window, whiteMove, isWhitePlayerHuman]() {
-			window->FinishMove(whiteMove, isWhitePlayerHuman);
-		});
-
-		std::cout << "black: " << std::flush;
-		Move blackMove = _player_black->MakeMove(*_board, _move_data, _game_thread_close);
-
-		if (_game_thread_close) {
+		if (!_MakeMove(*_player_black, window, isBlackPlayerHuman)) {
 			break;
 		}
-
-		std::cout << blackMove << std::endl;
-		MakeMove(blackMove);
-
-		window->GetEventHandler()->CallAfter([window, blackMove, isBlackPlayerHuman]() {
-			window->FinishMove(blackMove, isBlackPlayerHuman);
-		});
 	}
+}
+
+bool Game::_MakeMove(Player& player, Window *window, bool isHuman) {
+	Move move = player.MakeMove(*_board, _move_data, _game_thread_close);
+	if (_game_thread_close) {
+		return false;
+	}
+
+	MakeMove(move);
+	std::cout << move << std::endl;
+	std::cout << GetPsFEN() << std::endl;
+
+	window->GetEventHandler()->CallAfter([window, move, isHuman]() {
+		window->FinishMove(move, isHuman);
+	});
+
+	return true;
+	// TODO: check for mate
 }
 
 }

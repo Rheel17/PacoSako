@@ -7,6 +7,7 @@
 #include <wx/image.h>
 #include <wx/wfstream.h>
 #include <wx/graphics.h>
+#include <wx/sound.h>
 
 #include "PlayerHuman.h"
 #include "AiRandom.h"
@@ -19,6 +20,8 @@ const wxString NewGameDialog::_PLAYER_CHOICES[2] = {
 		"Human",
 		"AI: Random"
 };
+
+const wxSound moveSound("Resources/wav/Move.wav");
 
 #define ID_BUTTON_CANCEL 17001
 #define ID_BUTTON_CREATE 17002
@@ -401,6 +404,8 @@ void BoardView::_PutDown() {
 	if (_moving_piece_origin != _mouse_position && _mouse_position.IsValid() &&
 			std::find(_possible_moves.begin(), _possible_moves.end(), _mouse_position) != _possible_moves.end()) {
 
+		moveSound.Play();
+
 		// we can drop the piece here; so do that.
 		// append the current move chain
 		_current_move.AddPosition(_mouse_position);
@@ -581,8 +586,21 @@ void NewGameDialog::CancelButtonEvent(wxCommandEvent& evt) {
 }
 
 void NewGameDialog::CreateButtonEvent(wxCommandEvent& evt) {
-	_parent->StartGame(_game);
+	_parent->StartGame(_game,
+			_CreatePlayer(_combo_white, Piece::Color::WHITE),
+			_CreatePlayer(_combo_black, Piece::Color::BLACK));
 	Close(true);
+}
+
+Player *NewGameDialog::_CreatePlayer(wxComboBox *comboBox, Piece::Color color) {
+	std::cout << comboBox->GetCurrentSelection() << std::endl;
+
+	switch (comboBox->GetCurrentSelection()) {
+		case 0: return new PlayerHuman(color, _parent);
+		case 1: return new AiRandom(color);
+	}
+
+	return nullptr;
 }
 
 Window::Window() :
@@ -626,12 +644,12 @@ void Window::NewGame(wxCommandEvent& evt) {
 	NewGame();
 }
 
-void Window::StartGame(Game game) {
+void Window::StartGame(Game game, Player *white, Player *black) {
 	_game = new Game(std::move(game));
 	_board_view->SetGame(_game);
 	_board_view->SetPlayerColor(Piece::Color::EMPTY);
 
-	_game->SetPlayers(new PlayerHuman(Piece::Color::WHITE, this), new PlayerHuman(Piece::Color::BLACK, this));
+	_game->SetPlayers(white, black);
 	_game->StartThread(this);
 }
 
@@ -645,6 +663,11 @@ std::future<ps::Move> Window::StartMove(Piece::Color playerColor) {
 
 void Window::FinishMove(const ps::Move& move, bool fromHuman) {
 	if (fromHuman) {
+		_board_view->ResetDisplay();
+		_board_view->Redraw();
+	} else {
+		moveSound.Play();
+
 		_board_view->ResetDisplay();
 		_board_view->Redraw();
 	}
