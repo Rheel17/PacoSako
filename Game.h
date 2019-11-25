@@ -14,6 +14,8 @@
 
 namespace ps {
 
+class Window;
+
 class Game {
 
 public:
@@ -32,7 +34,7 @@ public:
 
 	bool SetState(const std::string& psFEN);
 
-	void StartThread(void *window);
+	void StartThread(Window *window);
 
 	const Board& GetBoard() const;
 
@@ -47,7 +49,7 @@ public:
 	std::string GetPsFEN() const;
 
 private:
-	void _Loop();
+	void _Loop(Window *window);
 
 	std::unique_ptr<Board> _board;
 

@@ -192,6 +192,10 @@ void BoardView::MouseMotionEvent(wxMouseEvent& evt) {
 	Redraw();
 }
 
+void BoardView::ResetDisplay() {
+	_display = _game->GetBoard();
+}
+
 void BoardView::Redraw() {
 	RefreshRect(GetClientRect(), false);
 }
@@ -629,6 +633,13 @@ std::future<ps::Move> Window::StartMove(Piece::Color playerColor) {
 	_board_view->SetPlayerColor(playerColor);
 	_move = std::promise<ps::Move>();
 	return _move.get_future();
+}
+
+void Window::FinishMove(const ps::Move& move, bool fromHuman) {
+	if (fromHuman) {
+		_board_view->ResetDisplay();
+		_board_view->Redraw();
+	}
 }
 
 void Window::_MakeMove(const ps::Move& move) {

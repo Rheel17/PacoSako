@@ -32,6 +32,7 @@ public:
     void MouseLeaveWindowEvent(wxMouseEvent& evt);
     void MouseMotionEvent(wxMouseEvent& evt);
 
+    void ResetDisplay();
 	void Redraw();
 
 private:
@@ -122,6 +123,7 @@ public:
 	void StartGame(Game game);
 
 	std::future<ps::Move> StartMove(Piece::Color playerColor);
+	void FinishMove(const ps::Move& move, bool fromHuman);
 
 private:
 	void _MakeMove(const ps::Move& move);

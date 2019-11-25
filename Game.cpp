@@ -6,6 +6,7 @@
 #include <cassert>
 
 #include "PlayerHuman.h"
+#include "Window.h"
 
 namespace ps {
 
@@ -110,11 +111,11 @@ bool Game::SetState(const std::string &psFEN) {
 	return true;
 }
 
-void Game::StartThread(void *window) {
+void Game::StartThread(Window *window) {
 	assert(_player_white && _player_black);
 
-	_game_thread = std::unique_ptr<std::thread>(new std::thread([](Game *game){
-		game->_Loop();
+	_game_thread = std::unique_ptr<std::thread>(new std::thread([window](Game *game){
+		game->_Loop(window);
 	}, this));
 }
 
@@ -274,17 +275,28 @@ std::string Game::GetPsFEN() const {
 	return boardFEN;
 }
 
-void Game::_Loop() {
+void Game::_Loop(Window *window) {
+	bool isWhitePlayerHuman = (bool) dynamic_cast<PlayerHuman *>(_player_white.get());
+	bool isBlackPlayerHuman = (bool) dynamic_cast<PlayerHuman *>(_player_black.get());
+
 	while (true) {
 		std::cout << "white: " << std::flush;
 		Move whiteMove = _player_white->MakeMove(*_board, _move_data);
 		std::cout << whiteMove << std::endl;
 		MakeMove(whiteMove);
 
+		window->GetEventHandler()->CallAfter([window, whiteMove, isWhitePlayerHuman]() {
+			window->FinishMove(whiteMove, isWhitePlayerHuman);
+		});
+
 		std::cout << "black: " << std::flush;
 		Move blackMove = _player_black->MakeMove(*_board, _move_data);
 		std::cout << blackMove << std::endl;
 		MakeMove(blackMove);
+
+		window->GetEventHandler()->CallAfter([window, blackMove, isBlackPlayerHuman]() {
+			window->FinishMove(blackMove, isBlackPlayerHuman);
+		});
 	}
 }
 
