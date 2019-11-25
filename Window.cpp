@@ -586,7 +586,8 @@ void NewGameDialog::CreateButtonEvent(wxCommandEvent& evt) {
 }
 
 Window::Window() :
-		wxFrame(nullptr, wxID_ANY, L"Paco Ŝako") {
+		wxFrame(nullptr, wxID_ANY, L"Paco Ŝako"),
+		_move(new std::promise<ps::Move>()) {
 
 	_menu_game = new wxMenu;
 	_menu_game->Append(wxID_NEW, L"&New");
@@ -611,6 +612,11 @@ Window::Window() :
 	SetSizerAndFit(topSizer);
 }
 
+Window::~Window() {
+	delete _game;
+	delete _move;
+}
+
 void Window::NewGame() {
 	NewGameDialog newGameDialog(this);
 	newGameDialog.ShowModal();
@@ -621,18 +627,20 @@ void Window::NewGame(wxCommandEvent& evt) {
 }
 
 void Window::StartGame(Game game) {
-	_game = std::move(game);
-	_board_view->SetGame(&_game);
+	_game = new Game(std::move(game));
+	_board_view->SetGame(_game);
 	_board_view->SetPlayerColor(Piece::Color::EMPTY);
 
-	_game.SetPlayers(new PlayerHuman(Piece::Color::WHITE, this), new PlayerHuman(Piece::Color::BLACK, this));
-	_game.StartThread(this);
+	_game->SetPlayers(new PlayerHuman(Piece::Color::WHITE, this), new PlayerHuman(Piece::Color::BLACK, this));
+	_game->StartThread(this);
 }
 
 std::future<ps::Move> Window::StartMove(Piece::Color playerColor) {
+	delete _move;
+	_move = new std::promise<ps::Move>();
+
 	_board_view->SetPlayerColor(playerColor);
-	_move = std::promise<ps::Move>();
-	return _move.get_future();
+	return _move->get_future();
 }
 
 void Window::FinishMove(const ps::Move& move, bool fromHuman) {
@@ -643,7 +651,7 @@ void Window::FinishMove(const ps::Move& move, bool fromHuman) {
 }
 
 void Window::_MakeMove(const ps::Move& move) {
-	_move.set_value(move);
+	_move->set_value(move);
 	_board_view->SetPlayerColor(Piece::Color::EMPTY);
 }
 

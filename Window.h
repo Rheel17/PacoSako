@@ -117,6 +117,13 @@ class Window : public wxFrame {
 
 public:
 	Window();
+	~Window();
+
+	Window(const Window&) = delete;
+	Window& operator=(const Window&) = delete;
+
+	Window(Window&&) = delete;
+	Window& operator=(Window&&) = delete;
 
 	void NewGame();
 	void NewGame(wxCommandEvent& evt);
@@ -132,9 +139,8 @@ private:
 	wxMenu *_menu_game;
 	BoardView *_board_view;
 
-	Game _game;
-
-	std::promise<ps::Move> _move;
+	std::promise<ps::Move> *_move;
+	Game *_game = nullptr;
 
 };
 

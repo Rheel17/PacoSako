@@ -15,7 +15,7 @@ class PlayerHuman : public Player {
 public:
 	PlayerHuman(Piece::Color playerColor, Window *window);
 
-	Move MakeMove(const Board& board, const GameMoveData& moveData) override;
+	Move MakeMove(const Board& board, const GameMoveData& moveData, std::atomic_bool& stop) override;
 
 private:
 	Window *_window;

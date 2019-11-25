@@ -14,6 +14,15 @@ Game::Game() {
 	_board = std::make_unique<Board>();
 }
 
+Game::~Game() {
+	if (!_game_thread) {
+		return;
+	}
+
+	_game_thread_close.store(true);
+	_game_thread->join();
+}
+
 Game::Game(const Game& game) noexcept :
 	_board(std::make_unique<Board>(*game._board)),
 	_current_player(std::move(game._current_player)),
@@ -279,9 +288,14 @@ void Game::_Loop(Window *window) {
 	bool isWhitePlayerHuman = (bool) dynamic_cast<PlayerHuman *>(_player_white.get());
 	bool isBlackPlayerHuman = (bool) dynamic_cast<PlayerHuman *>(_player_black.get());
 
-	while (true) {
+	while (!_game_thread_close) {
 		std::cout << "white: " << std::flush;
-		Move whiteMove = _player_white->MakeMove(*_board, _move_data);
+		Move whiteMove = _player_white->MakeMove(*_board, _move_data, _game_thread_close);
+
+		if (_game_thread_close) {
+			break;
+		}
+
 		std::cout << whiteMove << std::endl;
 		MakeMove(whiteMove);
 
@@ -290,7 +304,12 @@ void Game::_Loop(Window *window) {
 		});
 
 		std::cout << "black: " << std::flush;
-		Move blackMove = _player_black->MakeMove(*_board, _move_data);
+		Move blackMove = _player_black->MakeMove(*_board, _move_data, _game_thread_close);
+
+		if (_game_thread_close) {
+			break;
+		}
+
 		std::cout << blackMove << std::endl;
 		MakeMove(blackMove);
 

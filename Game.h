@@ -6,7 +6,7 @@
 
 #include <thread>
 #include <memory>
-#include <mutex>
+#include <atomic>
 
 #include "Player.h"
 #include "Board.h"
@@ -20,6 +20,7 @@ class Game {
 
 public:
 	Game();
+	~Game();
 
 	Game(const Game& game) noexcept;
 	Game& operator=(const Game& game) noexcept;
@@ -61,6 +62,7 @@ private:
 	int _fify_move_rule_count = 0;
 	int _current_move = 1;
 
+	std::atomic_bool _game_thread_close { false };
 	std::unique_ptr<std::thread> _game_thread;
 
 };
