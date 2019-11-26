@@ -480,6 +480,8 @@ NewGameDialog::NewGameDialog(Window *parent) :
 		wxDialog(parent, wxID_ANY, "New Game"),
 		_parent(parent) {
 
+	SetIcon(wxICON(aaaa));
+
 	auto panel = new wxBoxSizer(wxHORIZONTAL);
 	auto labelPanel = new wxFlexGridSizer(5, 1, 0, 0);
 	auto contentPanel = new wxBoxSizer(wxVERTICAL);
@@ -604,6 +606,8 @@ Player *NewGameDialog::_CreatePlayer(wxComboBox *comboBox, Piece::Color color) {
 Window::Window() :
 		wxFrame(nullptr, wxID_ANY, L"Paco Ŝako"),
 		_move(new std::promise<ps::Move>()) {
+
+	SetIcon(wxICON(aaaa));
 
 	_menu_game = new wxMenu;
 	_menu_game->Append(wxID_NEW, L"&New");

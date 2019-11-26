@@ -427,10 +427,6 @@ void Board::_AddMoves(const BoardPosition& position, const Piece& piece, Piece::
 }
 
 std::vector<Move> Board::_GetAllPossibleMoves(bool checkSako, Piece::Color color, const GameMoveData& moveData) const {
-	// TODO: fix bug at
-	// 6UQqn/6k1/UBp2P1UNpp1/4UPnUPb2/P1UPpP4/UNp1URp1UQbK2/4pQ2/1r1UBq1UPr2 b - - 1 92
-	// queening in a chain doesn't know about the moving piece change
-
 	std::vector<Move> moves;
 	std::vector<Move> temp;
 	Board dummy;
@@ -521,6 +517,14 @@ void Board::_AddAllPossibleChainMoves(Move prefix, bool lastEnPassant, const Pie
 
 	Piece movingPiece = dummy[position].MakeUnionWith(piece);
 	auto pieceMoves = dummy.CalculatePossibleMoves(position, movingPiece, movingPiece.GetColor(), moveData, false);
+
+	if (position.GetRow() == 0 && piece.GetBlackType() == Piece::Type::PAWN) {
+		dummy[position] = Piece(dummy[position].GetWhiteType(), Piece::Type::QUEEN);
+	}
+
+	if (position.GetRow() == 7 && piece.GetWhiteType() == Piece::Type::PAWN) {
+		dummy[position] = Piece(Piece::Type::QUEEN, dummy[position].GetBlackType());
+	}
 
 	for (const auto& move : pieceMoves) {
 		Piece toPiece = dummy[move];

@@ -1,1 +1,3 @@
+aaaa ICON Resources/ico/icon.ico
+
 #include <wx/msw/wx.rc>
