@@ -21,7 +21,9 @@ const wxString NewGameDialog::_PLAYER_CHOICES[2] = {
 		"AI: Random"
 };
 
-const wxSound moveSound("Resources/wav/Move.wav");
+const wxSound soundMove("Resources/wav/Move.wav");
+const wxSound soundUnion("Resources/wav/Union.wav");
+const wxSound soundMate("Resources/wav/Mate.wav");
 
 #define ID_BUTTON_CANCEL 17001
 #define ID_BUTTON_CREATE 17002
@@ -404,8 +406,6 @@ void BoardView::_PutDown() {
 	if (_moving_piece_origin != _mouse_position && _mouse_position.IsValid() &&
 			std::find(_possible_moves.begin(), _possible_moves.end(), _mouse_position) != _possible_moves.end()) {
 
-		moveSound.Play();
-
 		// we can drop the piece here; so do that.
 		// append the current move chain
 		_current_move.AddPosition(_mouse_position);
@@ -418,6 +418,8 @@ void BoardView::_PutDown() {
 			// this was an en passant move
 			Piece original = _display[{ _moving_piece_origin.GetRow(), _mouse_position.GetColumn() }];
 			_display[{ _moving_piece_origin.GetRow(), _mouse_position.GetColumn() }] = Piece();
+
+			soundUnion.Play();
 
 			if (original.GetColor() == Piece::Color::UNION) {
 				// the target was a union, so chain the move with the new piece.
@@ -435,6 +437,8 @@ void BoardView::_PutDown() {
 			// this was not an en passant move
 			if (_game->GetBoard()[_mouse_position].GetColor() == Piece::Color::UNION) {
 				// the target was a union, so chain the move with the new piece.
+
+				soundUnion.Play();
 
 				// check if there was a white pawn promotion
 				if (_mouse_position.GetRow() == 7 && _moving_piece.GetWhiteType() == Piece::Type::PAWN) {
@@ -455,6 +459,12 @@ void BoardView::_PutDown() {
 				_possible_moves = _display.CalculatePossibleMoves(_moving_piece_origin, _moving_piece, _player_color, _game->GetMoveData());
 				return;
 			} else {
+				if (_game->GetBoard()[_mouse_position].GetColor() != Piece::Color::EMPTY) {
+					 soundUnion.Play();
+				} else {
+					soundMove.Play();
+				}
+
 				// the target was not a union, so finish the move.
 				// TODO: check if a pawn promotion happened and if so, let the
 				// player choose a piece.
@@ -668,15 +678,13 @@ void Window::FinishMove(const ps::Move& move, bool fromHuman) {
 		_board_view->ResetDisplay();
 		_board_view->Redraw();
 	} else {
-		moveSound.Play();
-
 		_board_view->ResetDisplay();
 		_board_view->Redraw();
 	}
 }
 
 void Window::Mate() {
-
+	soundMate.Play();
 }
 
 void Window::Stalemate() {
