@@ -32,4 +32,15 @@ private:
 
 }
 
+namespace std {
+
+template<>
+struct hash<ps::BoardPosition> {
+	size_t operator()(const ps::BoardPosition& pos) const {
+		return pos.GetRow() * 1024 + pos.GetColumn();
+	}
+};
+
+}
+
 #endif

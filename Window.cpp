@@ -47,7 +47,8 @@ END_EVENT_TABLE()
 
 BoardView::BoardView(wxWindow *parent, bool displayOnly) :
 		wxWindow(parent, wxID_ANY, wxDefault, wxBORDER_SUNKEN),
-		_display_only(displayOnly) {
+		_display_only(displayOnly),
+		_animation_start(-1, -1), _animation_end(-1, -1) {
 
 	// set widget properties
 	SetDoubleBuffered(true);
@@ -57,6 +58,7 @@ BoardView::BoardView(wxWindow *parent, bool displayOnly) :
 	_brush_board_dark = std::make_unique<wxBrush>(wxColour(215, 128, 73));
 	_brush_board_light = std::make_unique<wxBrush>(wxColour(241, 202, 163));
 	_brush_tile_origin = std::make_unique<wxBrush>(wxColour(249, 166, 45, 143));
+	_brush_tile_move = std::make_unique<wxBrush>(wxColour(97, 184, 112, 143));
 	_brush_tile_mouseover = std::make_unique<wxBrush>(wxColour(67, 107, 166, 143));
 
 	// Specify the png files used in the rendering
@@ -205,6 +207,34 @@ void BoardView::Redraw() {
 	RefreshRect(GetClientRect(), false);
 }
 
+void BoardView::SetLastMove(const ps::Move& move) {
+	_last_move = move;
+}
+
+void BoardView::Animate(const ps::Move& move) {
+	std::cout << "Animate id: " << std::this_thread::get_id() << std::endl;
+
+	_last_move_postfix = move.GetPositions();
+	_animating_piece = _display[_last_move_postfix[0]];
+
+	// TODO: castling
+	// TODO: queen promotion
+	// TODO: en passant
+
+	while (_last_move_postfix.size() >= 2) {
+		_animation_start = _last_move_postfix[0];
+		_animation_end = _last_move_postfix[1];
+		_animation_total = 200.0f;
+
+		for (_animation_time = 0.0f; _animation_time < _animation_total; _animation_time++) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(16));
+			Redraw();
+		}
+
+		_last_move_postfix.erase(_last_move_postfix.begin());
+	}
+}
+
 int BoardView::_Row(int r) const {
 	if (_rotated) {
 		return r;
@@ -284,6 +314,21 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 						_tile_size, _tile_size);
 	}
 
+	// draw the last move
+	if (const auto& lastMovePositions = _last_move.GetPositions(); !lastMovePositions.empty()) {
+		gc->SetBrush(*_brush_tile_move);
+
+		std::unordered_set<BoardPosition> set;
+		std::copy(lastMovePositions.begin(), lastMovePositions.end(), std::inserter(set, set.begin()));
+
+		for (const auto& pos : set) {
+			gc->DrawRectangle(
+							_tile_size * _Col(pos.GetColumn()),
+							_tile_size * _Row(pos.GetRow()),
+							_tile_size, _tile_size);
+		}
+	}
+
 	// draw the pieces
 	for (int x = 0; x < 8; x++) {
 		for (int y = 0; y < 8; y++) {
@@ -310,6 +355,17 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 
 	// draw the dragging piece
 	_DrawPiece(gc, _moving_piece, _mouse_point - wxPoint2DDouble { 0.5, 0.5 });
+
+	// draw the animating piece
+	if (_animating_piece.GetColor() != Piece::Color::EMPTY) {
+		float t = _animation_time / _animation_total;
+		wxPoint2DDouble animationPosition {
+			_animation_start.GetColumn() * (t - 1) + _animation_end.GetColumn() * t,
+			_animation_start.GetRow()    * (t - 1) + _animation_end.GetRow()    * t
+		};
+
+		_DrawPiece(gc, _animating_piece, animationPosition);
+	}
 }
 
 void BoardView::_DrawPiece(wxGraphicsContext *gc, Piece piece, wxPoint2DDouble boardPosition) {
@@ -674,10 +730,13 @@ std::future<ps::Move> Window::StartMove(Piece::Color playerColor) {
 }
 
 void Window::FinishMove(const ps::Move& move, bool fromHuman) {
+	_board_view->SetLastMove(move);
+
 	if (fromHuman) {
 		_board_view->ResetDisplay();
 		_board_view->Redraw();
 	} else {
+		_board_view->Animate(move);
 		_board_view->ResetDisplay();
 		_board_view->Redraw();
 	}

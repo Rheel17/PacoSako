@@ -34,6 +34,8 @@ public:
 
     void ResetDisplay();
 	void Redraw();
+	void SetLastMove(const ps::Move& move);
+	void Animate(const ps::Move& move);
 
 private:
     int _Row(int r) const;
@@ -62,10 +64,19 @@ private:
 	Piece _moving_piece;
 	std::vector<BoardPosition> _possible_moves;
 	ps::Move _current_move;
+	ps::Move _last_move;
+
+	std::vector<BoardPosition> _last_move_postfix;
+	Piece _animating_piece;
+	BoardPosition _animation_start;
+	BoardPosition _animation_end;
+	float _animation_time = 0.0f;
+	float _animation_total = 0.0f;
 
 	std::unique_ptr<wxBrush> _brush_board_dark;
 	std::unique_ptr<wxBrush> _brush_board_light;
 	std::unique_ptr<wxBrush> _brush_tile_origin;
+	std::unique_ptr<wxBrush> _brush_tile_move;
 	std::unique_ptr<wxBrush> _brush_tile_mouseover;
 	std::unordered_map<std::string, wxImage> _images;
 	std::unordered_map<std::string, wxBitmap> _bitmaps;
