@@ -45,10 +45,37 @@ EVT_TEXT(wxID_ANY, NewGameDialog::TextEvent)
 	EVT_BUTTON(ID_BUTTON_CREATE, NewGameDialog::CreateButtonEvent)
 END_EVENT_TABLE()
 
+Animation::Animation(const Board& startBoard, const Move& move) :
+		_start_board(startBoard), _move(move) {
+
+	auto submoves = move.GetSubMoves(startBoard);
+
+	for (int i = submoves.size() - 1; i >= 0; i--) {
+		_left_steps.push_back(AnimationStep{ submoves[i], 0.0f });
+	}
+}
+
+const Move& Animation::GetMove() const {
+	return _move;
+}
+
+AnimationStep& Animation::GetCurrentStep() {
+	return _left_steps.back();
+}
+
+bool Animation::NextStep() {
+	_left_steps.pop_back();
+
+	if (_left_steps.empty()) {
+		return false;
+	}
+
+	return true;
+}
+
 BoardView::BoardView(wxWindow *parent, bool displayOnly) :
 		wxWindow(parent, wxID_ANY, wxDefault, wxBORDER_SUNKEN),
-		_display_only(displayOnly),
-		_animation_start(-1, -1), _animation_end(-1, -1) {
+		_display_only(displayOnly) {
 
 	// set widget properties
 	SetDoubleBuffered(true);
@@ -139,8 +166,9 @@ void BoardView::MouseLeftDownEvent(wxMouseEvent& evt) {
 	};
 
 	// we are not currently holding a piece, so check if the user clicked a
-	// square with a piece
-	if (_game && !_display_only && _mouse_point.m_x > 0 && _mouse_point.m_x < 8) {
+	// square with a piece. Only pick up a piece if we have a game, and are not
+	// showing an animation
+	if (_animation_queue.empty() && _game && !_display_only && _mouse_point.m_x > 0 && _mouse_point.m_x < 8) {
 		// get the x, y position on the board
 		int x = _Col(int(_mouse_point.m_x));
 		int y = _Row(int(_mouse_point.m_y));
@@ -211,28 +239,9 @@ void BoardView::SetLastMove(const ps::Move& move) {
 	_last_move = move;
 }
 
-void BoardView::Animate(const ps::Move& move) {
-	std::cout << "Animate id: " << std::this_thread::get_id() << std::endl;
-
-	_last_move_postfix = move.GetPositions();
-	_animating_piece = _display[_last_move_postfix[0]];
-
-	// TODO: castling
-	// TODO: queen promotion
-	// TODO: en passant
-
-	while (_last_move_postfix.size() >= 2) {
-		_animation_start = _last_move_postfix[0];
-		_animation_end = _last_move_postfix[1];
-		_animation_total = 200.0f;
-
-		for (_animation_time = 0.0f; _animation_time < _animation_total; _animation_time++) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(16));
-			Redraw();
-		}
-
-		_last_move_postfix.erase(_last_move_postfix.begin());
-	}
+void BoardView::AddAnimation(const ps::Move& move) {
+	_animation_queue.emplace(_display, move);
+	std::cout << "Added animation: " << move << std::endl;
 }
 
 int BoardView::_Row(int r) const {
@@ -357,14 +366,18 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 	_DrawPiece(gc, _moving_piece, _mouse_point - wxPoint2DDouble { 0.5, 0.5 });
 
 	// draw the animating piece
-	if (_animating_piece.GetColor() != Piece::Color::EMPTY) {
-		float t = _animation_time / _animation_total;
+	_HandleAnimations();
+
+	if (!_animation_queue.empty()) {
+		auto& a = _animation_queue.front().GetCurrentStep();
+
+		float t = a.time / AnimationStep::MAX_TIME;
 		wxPoint2DDouble animationPosition {
-			_animation_start.GetColumn() * (t - 1) + _animation_end.GetColumn() * t,
-			_animation_start.GetRow()    * (t - 1) + _animation_end.GetRow()    * t
+			_Col(a.submove.start_position.GetColumn()) * (1 - t) + _Col(a.submove.end_position.GetColumn()) * t,
+			_Row(a.submove.start_position.GetRow())    * (1 - t) + _Row(a.submove.end_position.GetRow())    * t
 		};
 
-		_DrawPiece(gc, _animating_piece, animationPosition);
+		_DrawPiece(gc, a.submove.moving_piece, animationPosition);
 	}
 }
 
@@ -542,6 +555,30 @@ void BoardView::_FinishMove() {
 	static_cast<Window *>(GetGrandParent())->_MakeMove(_current_move);
 }
 
+void BoardView::_HandleAnimations() {
+	if (_animation_queue.empty()) {
+		return;
+	}
+
+	Animation& animation = _animation_queue.front();
+
+	std::cout << "Current animation: " << animation.GetMove() << std::endl;
+
+	AnimationStep& step = animation.GetCurrentStep();
+
+	std::cout << "Current step: " << step.submove.start_position.GetName() << " -> "
+			<< step.submove.end_position.GetName() << " with " << step.submove.moving_piece << std::endl;
+
+	step.time += 0.016;
+
+	if (step.time >= AnimationStep::MAX_TIME) {
+		if (!animation.NextStep()) {
+			// finish the step
+			_animation_queue.pop();
+		}
+	}
+}
+
 NewGameDialog::NewGameDialog(Window *parent) :
 		wxDialog(parent, wxID_ANY, "New Game"),
 		_parent(parent) {
@@ -699,6 +736,12 @@ Window::Window() :
 }
 
 Window::~Window() {
+	if (_animation_thread) {
+		_animation_stop.store(true);
+		_animation_thread->join();
+		_animation_thread.reset();
+	}
+
 	delete _game;
 	delete _move;
 }
@@ -736,9 +779,12 @@ void Window::FinishMove(const ps::Move& move, bool fromHuman) {
 		_board_view->ResetDisplay();
 		_board_view->Redraw();
 	} else {
-		_board_view->Animate(move);
-		_board_view->ResetDisplay();
-		_board_view->Redraw();
+		_board_view->AddAnimation(move);
+		_animation_stop.store(false);
+
+		if (!_animation_thread) {
+			_animation_thread = std::make_unique<std::thread>(_AnimationThreadMain, this);
+		}
 	}
 }
 
@@ -753,6 +799,16 @@ void Window::Stalemate() {
 void Window::_MakeMove(const ps::Move& move) {
 	_move->set_value(move);
 	_board_view->SetPlayerColor(Piece::Color::EMPTY);
+}
+
+void Window::_AnimationThreadMain(Window *window) {
+	while (!window->_animation_stop) {
+		window->GetEventHandler()->CallAfter([window]() {
+			window->_board_view->Redraw();
+		});
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(16));
+	}
 }
 
 }

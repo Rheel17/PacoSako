@@ -10,11 +10,39 @@
 #include <unordered_map>
 #include <vector>
 #include <future>
+#include <queue>
 
 #include "Player.h"
 #include "Game.h"
 
 namespace ps {
+
+class AnimationStep {
+
+public:
+	SubMove submove;
+	float time;
+
+public:
+	constexpr static float MAX_TIME = 1.0f;
+
+};
+
+class Animation {
+
+public:
+	Animation(const Board& startBoard, const Move& move);
+
+	const Move& GetMove() const;
+	AnimationStep& GetCurrentStep();
+	bool NextStep();
+
+private:
+	Board _start_board;
+	Move _move;
+	std::vector<AnimationStep> _left_steps;
+
+};
 
 class BoardView : public wxWindow {
 	wxDECLARE_EVENT_TABLE();
@@ -35,7 +63,7 @@ public:
     void ResetDisplay();
 	void Redraw();
 	void SetLastMove(const ps::Move& move);
-	void Animate(const ps::Move& move);
+	void AddAnimation(const ps::Move& move);
 
 private:
     int _Row(int r) const;
@@ -46,6 +74,8 @@ private:
 
 	void _PutDown();
 	void _FinishMove();
+
+	void _HandleAnimations();
 
 	Board _display;
 	bool _display_only;
@@ -66,12 +96,7 @@ private:
 	ps::Move _current_move;
 	ps::Move _last_move;
 
-	std::vector<BoardPosition> _last_move_postfix;
-	Piece _animating_piece;
-	BoardPosition _animation_start;
-	BoardPosition _animation_end;
-	float _animation_time = 0.0f;
-	float _animation_total = 0.0f;
+	std::queue<Animation> _animation_queue;
 
 	std::unique_ptr<wxBrush> _brush_board_dark;
 	std::unique_ptr<wxBrush> _brush_board_light;
@@ -157,6 +182,12 @@ private:
 
 	std::promise<ps::Move> *_move;
 	Game *_game = nullptr;
+
+	std::unique_ptr<std::thread> _animation_thread;
+	std::atomic_bool _animation_stop;
+
+private:
+	static void _AnimationThreadMain(Window *window);
 
 };
 

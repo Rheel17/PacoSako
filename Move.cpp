@@ -3,11 +3,15 @@
  */
 #include "Move.h"
 
-//#include <cassert>
+#include <cassert>
 
 #include "Board.h"
 
 namespace ps {
+
+SubMove::SubMove(Piece movingPiece, Piece resultingPiece, BoardPosition startPosition, BoardPosition endPosition) :
+		moving_piece(std::move(movingPiece)), resulting_piece(std::move(resultingPiece)),
+		start_position(std::move(startPosition)), end_position(std::move(endPosition)) {}
 
 Move::Move(BoardPosition startMove) {
 		_positions.push_back(std::move(startMove));
@@ -21,18 +25,24 @@ const std::vector<BoardPosition>& Move::GetPositions() const {
 	return _positions;
 }
 
-static void assert(bool b) {
-	if (!b) {
-		abort();
-	}
+std::vector<SubMove> Move::GetSubMoves(const Board& board) const {
+	Board dummy = board;
+	return _Move(dummy);
 }
 
 void Move::PerformOn(Board &board) const {
+	_Move(board);
+}
+
+std::vector<SubMove> Move::_Move(Board& board) const {
+	std::vector<SubMove> submoves;
+
 	assert(_positions.size() > 1);
 
 	Piece movingPiece = board[_positions[0]];
 	board[_positions[0]] = Piece();
 
+	// The movement of a single union
 	if (movingPiece.GetColor() == Piece::Color::UNION) {
 		Piece& toPiece = board[_positions[1]];
 
@@ -51,14 +61,42 @@ void Move::PerformOn(Board &board) const {
 			toPiece = Piece(toPiece.GetBlackType(), Piece::Type::QUEEN);
 		}
 
-		return;
+		submoves.push_back(SubMove(movingPiece, toPiece, _positions[0], _positions[1]));
+		return submoves;
 	}
 
+	// The movement of a castling king
+	if (movingPiece.GetTypeOfColor(movingPiece.GetColor()) == Piece::Type::KING &&
+			abs(_positions[1].GetColumn() - _positions[0].GetColumn()) == 2) {
+
+		Piece& toPiece = board[_positions[1]];
+
+		// move the king
+		toPiece = movingPiece;
+		movingPiece = Piece();
+		submoves.push_back(SubMove(movingPiece, movingPiece, _positions[0], _positions[1]));
+
+		// move the corresponding rook
+		int delta = _positions[1].GetColumn() - _positions[0].GetColumn();
+		BoardPosition rookStart { _positions[0].GetRow(), delta < 0 ? 0 : 7 };
+		BoardPosition rookEnd { _positions[0].GetRow(), delta < 0 ? 2 : 4 };
+
+		submoves.push_back(SubMove(board[rookStart], board[rookStart], rookStart, rookEnd));
+		board[rookEnd] = board[rookStart];
+		board[rookStart] = Piece();
+
+		return submoves;
+	}
+
+	// the movement of a normal piece into a potential chain
 	for (size_t i = 0; i < _positions.size() - 1; i++) {
 		assert(movingPiece.GetColor() != Piece::Color::EMPTY);
 
+		const BoardPosition& from = _positions[i];
 		const BoardPosition& to = _positions[i + 1];
 		Piece& toPiece = board[to];
+
+		Piece startingPiece = movingPiece;
 
 		// check for pawn promotion
 		// TODO: allow the player to choose the piece
@@ -73,49 +111,42 @@ void Move::PerformOn(Board &board) const {
 		switch (toPiece.GetColor()) {
 			case Piece::Color::EMPTY:
 				if (movingPiece.GetTypeOfColor(movingPiece.GetColor()) == Piece::Type::PAWN &&
-						_positions[i].GetColumn() != to.GetColumn()) {
+						from.GetColumn() != to.GetColumn()) {
 
 					// this was an en passant move
-					BoardPosition enPassantPosition = { _positions[i].GetRow(), to.GetColumn() };
+					BoardPosition enPassantPosition = { from.GetRow(), to.GetColumn() };
 					Piece& epPiece = board[enPassantPosition];
+
+					submoves.push_back(SubMove(epPiece, toPiece, enPassantPosition, to));
 
 					toPiece = epPiece;
 					epPiece = Piece();
 					movingPiece = toPiece.MakeUnionWith(movingPiece);
-				} else if (movingPiece.GetColor() != Piece::Color::UNION &&
-						movingPiece.GetTypeOfColor(movingPiece.GetColor()) == Piece::Type::KING &&
-						abs(_positions[i].GetColumn() - to.GetColumn()) == 2) {
 
-					// this was a castling move
-					toPiece = movingPiece;
-					movingPiece = Piece();
+					submoves.push_back(SubMove(startingPiece, toPiece, from, to));
 
-					int delta = _positions[i].GetColumn() - to.GetColumn();
-
-					if (delta == 2) {
-						board[{ to.GetRow(), to.GetColumn() + delta / 2}] = board[{ to.GetRow(), 0}];
-						board[{ to.GetRow(), 0 }] = Piece();
-					} else if (delta == -2) {
-						board[{ to.GetRow(), to.GetColumn() + delta / 2}] = board[{ to.GetRow(), 7}];
-						board[{ to.GetRow(), 7 }] = Piece();
-					}
 				} else {
 					toPiece = movingPiece;
 					movingPiece = Piece();
+
+					submoves.push_back(SubMove(startingPiece, toPiece, from, to));
 				}
 				break;
 			case Piece::Color::UNION:
 				movingPiece = toPiece.MakeUnionWith(movingPiece);
+				submoves.push_back(SubMove(startingPiece, toPiece, from, to));
 				break;
 			case Piece::Color::WHITE:
 			case Piece::Color::BLACK:
 				toPiece.MakeUnionWith(movingPiece);
 				movingPiece = Piece();
+				submoves.push_back(SubMove(startingPiece, toPiece, from, to));
 				break;
 		}
 	}
 
 	assert(movingPiece.GetColor() == Piece::Color::EMPTY);
+	return submoves;
 }
 
 std::ostream& operator<<(std::ostream& out, const Move& move) {
