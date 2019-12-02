@@ -365,19 +365,19 @@ void Game::_Loop(Window *window) {
 		}
 
 		if (_current_player == Piece::Color::WHITE) {
-			if (!_MakeMove(*_player_white, window, isWhitePlayerHuman)) {
+			if (!_MakeMove(allMoves, *_player_white, window, isWhitePlayerHuman)) {
 				break;
 			}
 		} else {
-			if (!_MakeMove(*_player_black, window, isBlackPlayerHuman)) {
+			if (!_MakeMove(allMoves, *_player_black, window, isBlackPlayerHuman)) {
 				break;
 			}
 		}
 	}
 }
 
-bool Game::_MakeMove(Player& player, Window *window, bool isHuman) {
-	Move move = player.MakeMove(*_board, _move_data, _game_thread_close);
+bool Game::_MakeMove(const std::vector<Move>& possible, Player& player, Window *window, bool isHuman) {
+	Move move = player.MakeMove(*_board, _move_data, possible, _game_thread_close);
 	if (_game_thread_close) {
 		return false;
 	}

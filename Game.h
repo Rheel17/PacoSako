@@ -51,7 +51,7 @@ public:
 
 private:
 	void _Loop(Window *window);
-	bool _MakeMove(Player& player, Window *window, bool isHuman);
+	bool _MakeMove(const std::vector<Move>& possible, Player& player, Window *window, bool isHuman);
 
 	std::unique_ptr<Board> _board;
 

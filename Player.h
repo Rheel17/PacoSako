@@ -6,6 +6,7 @@
 
 #include "Board.h"
 #include "GameMoveData.h"
+#include "Move.h"
 
 #include <atomic>
 
@@ -20,7 +21,7 @@ public:
 	/**
 	 * Will be called by the host game on the game loop thread.
 	 */
-	virtual Move MakeMove(const Board& board, const GameMoveData& moveData, std::atomic_bool& stop) = 0;
+	virtual Move MakeMove(const Board& board, const GameMoveData& moveData, const std::vector<Move>& possible, std::atomic_bool& stop) = 0;
 
 protected:
 	const Piece::Color _player_color;

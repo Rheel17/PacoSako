@@ -15,7 +15,7 @@ class AiRandom : public Ai {
 public:
 	AiRandom(Piece::Color playerColor);
 
-	Move MakeMove(const Board& board, const GameMoveData& moveData, std::atomic_bool& stop);
+	Move MakeMove(const Board& board, const GameMoveData& moveData, const std::vector<Move>& possible, std::atomic_bool& stop) override;
 
 private:
 	std::mt19937_64 _rng;
