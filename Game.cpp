@@ -54,6 +54,10 @@ bool Game::SetState(const std::string &psFEN) {
 	}
 
 	_move_data = GameMoveData();
+	_move_data.can_white_castle_king_side = false;
+	_move_data.can_white_castle_queen_side = false;
+	_move_data.can_black_castle_king_side = false;
+	_move_data.can_black_castle_queen_side = false;
 
 	size_t boardEnd = psFEN.find(' ');
 	const char *arr = psFEN.c_str() + boardEnd + 1;

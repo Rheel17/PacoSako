@@ -129,6 +129,7 @@ BoardView::BoardView(wxWindow *parent, bool displayOnly) :
 void BoardView::SetGame(Game *game) {
 	_game = game;
 	_display = _game->GetBoard();
+	_last_move = ps::Move();
 	Redraw();
 }
 
@@ -253,7 +254,6 @@ void BoardView::SetLastMove(const ps::Move& move) {
 
 void BoardView::AddAnimation(const Board& premove, const ps::Move& move) {
 	_animation_queue.emplace(premove, move);
-	std::cout << "Added animation: " << move << std::endl;
 }
 
 int BoardView::_Row(int r) const {

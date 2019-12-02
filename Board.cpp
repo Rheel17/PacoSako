@@ -292,6 +292,10 @@ void Board::_AddKnightMoves(const BoardPosition& position, const Piece& piece, P
 void Board::_AddKingMoves(const BoardPosition& position, const Piece& piece, Piece::Color playerColor, std::vector<BoardPosition>& vec, const GameMoveData& moveData, bool checkSako) const {
 	for (int dc = -1; dc <= 1; dc++) {
 		for (int dr = -1; dr <= 1; dr++) {
+			if (dc == 0 && dr == 0) {
+				continue;
+			}
+
 			int r = position.GetRow() + dr;
 			int c = position.GetColumn() + dc;
 
