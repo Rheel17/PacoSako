@@ -492,19 +492,24 @@ void Board::_AddAllPossibleMoves(const BoardPosition& position, const Piece& pie
 		} else {
 			Move prefix(position);
 			prefix.AddPosition(move);
+
+			Board dummy = *this;
+			dummy[position] = Piece();
+
 			std::unordered_set<ChainHashKey> seenConfigs{};
-			_AddAllPossibleChainMoves(std::move(prefix), enPassant, piece, moves, moveData, seenConfigs);
+			dummy._AddAllPossibleChainMoves(std::move(prefix), enPassant, piece, moves, moveData, seenConfigs);
 		}
 	}
 }
 
 void Board::_AddAllPossibleChainMoves(Move prefix, bool lastEnPassant, const Piece& piece, std::vector<Move>& moves, const GameMoveData& moveData, std::unordered_set<ChainHashKey>& seenConfigs) const {
-	ChainHashKey currentConfig = { *this, piece };
+	const BoardPosition& position = prefix.GetPositions().back();
+	ChainHashKey currentConfig = { *this, piece, position };
+
 	if (const auto& [iter, didInsert] = seenConfigs.insert(currentConfig); !didInsert) {
 		return;
 	}
 
-	const BoardPosition& position = prefix.GetPositions().back();
 	const Piece& fromPiece = lastEnPassant ? GetPiece(moveData.en_passant_position) : GetPiece(position);
 
 	if (piece.GetColor() == opposite(fromPiece.GetColor())) {
@@ -554,7 +559,7 @@ void Board::_AddAllPossibleChainMoves(Move prefix, bool lastEnPassant, const Pie
 }
 
 bool ChainHashKey::operator==(const ChainHashKey& key) const {
-	return key.board == board && key.moving_piece == moving_piece;
+	return key.board == board && key.moving_piece == moving_piece && key.piece_origin == piece_origin;
 }
 
 }

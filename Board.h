@@ -53,8 +53,9 @@ private:
 };
 
 struct ChainHashKey {
-	Board board;
-	Piece moving_piece;
+	const Board board;
+	const Piece moving_piece;
+	const BoardPosition piece_origin;
 
 	bool operator==(const ChainHashKey& key) const;
 };
@@ -82,6 +83,7 @@ struct hash<ps::ChainHashKey> {
 		size_t result = 29;
 		result = 997 * result + hash<ps::Board>()(key.board);
 		result = 997 * result + hash<ps::Piece>()(key.moving_piece);
+		result = 997 * result + hash<ps::BoardPosition>()(key.piece_origin);
 		return result;
 	}
 };
