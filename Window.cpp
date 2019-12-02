@@ -55,12 +55,24 @@ Animation::Animation(const Board& startBoard, const Move& move) :
 	}
 }
 
+bool Animation::HasStarted() const {
+	return _started;
+}
+
+const Board& Animation::GetStartBoard() const {
+	return _start_board;
+}
+
 const Move& Animation::GetMove() const {
 	return _move;
 }
 
 AnimationStep& Animation::GetCurrentStep() {
 	return _left_steps.back();
+}
+
+void Animation::Start() {
+	_started = true;
 }
 
 bool Animation::NextStep() {
@@ -239,8 +251,8 @@ void BoardView::SetLastMove(const ps::Move& move) {
 	_last_move = move;
 }
 
-void BoardView::AddAnimation(const ps::Move& move) {
-	_animation_queue.emplace(_display, move);
+void BoardView::AddAnimation(const Board& premove, const ps::Move& move) {
+	_animation_queue.emplace(premove, move);
 	std::cout << "Added animation: " << move << std::endl;
 }
 
@@ -466,7 +478,7 @@ void BoardView::_PutDown() {
 	// we are no longer dragging the piece, because we just dropped it
 	_is_dragging = false;
 
-	if (!_game || _display_only) {
+	if (!_game || _display_only || _moving_piece.GetColor() == Piece::Color::EMPTY) {
 		return;
 	}
 
@@ -562,18 +574,30 @@ void BoardView::_HandleAnimations() {
 
 	Animation& animation = _animation_queue.front();
 
-	std::cout << "Current animation: " << animation.GetMove() << std::endl;
+	if (!animation.HasStarted()) {
+		_display = animation.GetStartBoard();
+		animation.Start();
+	}
 
 	AnimationStep& step = animation.GetCurrentStep();
+	if (step.time == 0.0f) {
+		if (step.submove.moving_piece.GetColor() == Piece::Color::UNION) {
+			_display[step.submove.start_position] = Piece();
+		} else if (_display[step.submove.start_position] == step.submove.moving_piece) {
+			_display[step.submove.start_position] = Piece();
+		}
+	}
 
-	std::cout << "Current step: " << step.submove.start_position.GetName() << " -> "
-			<< step.submove.end_position.GetName() << " with " << step.submove.moving_piece << std::endl;
-
-	step.time += 0.016;
+	step.time += 0.016f;
 
 	if (step.time >= AnimationStep::MAX_TIME) {
+		_display[step.submove.end_position] = step.submove.resulting_piece;
+
 		if (!animation.NextStep()) {
 			// finish the step
+			_display = animation.GetStartBoard();
+			animation.GetMove().PerformOn(_display);
+
 			_animation_queue.pop();
 		}
 	}
@@ -687,14 +711,14 @@ void NewGameDialog::CheckboxEvent(wxCommandEvent& evt) {
 }
 
 void NewGameDialog::CancelButtonEvent(wxCommandEvent& evt) {
-	Close(true);
+	Hide();
 }
 
 void NewGameDialog::CreateButtonEvent(wxCommandEvent& evt) {
 	_parent->StartGame(_game,
 			_CreatePlayer(_combo_white, Piece::Color::WHITE),
 			_CreatePlayer(_combo_black, Piece::Color::BLACK));
-	Close(true);
+	Hide();
 }
 
 Player *NewGameDialog::_CreatePlayer(wxComboBox *comboBox, Piece::Color color) {
@@ -713,7 +737,7 @@ Window::Window() :
 	SetIcon(wxICON(aaaa));
 
 	_menu_game = new wxMenu;
-	_menu_game->Append(wxID_NEW, L"&New");
+	_menu_game->Append(wxID_NEW, L"&New\tCtrl+N");
 
 	_menu = new wxMenuBar;
 	_menu->Append(_menu_game, L"Game");
@@ -772,14 +796,14 @@ std::future<ps::Move> Window::StartMove(Piece::Color playerColor) {
 	return _move->get_future();
 }
 
-void Window::FinishMove(const ps::Move& move, bool fromHuman) {
+void Window::FinishMove(const Board& premove, const ps::Move& move, bool fromHuman) {
 	_board_view->SetLastMove(move);
 
 	if (fromHuman) {
 		_board_view->ResetDisplay();
 		_board_view->Redraw();
 	} else {
-		_board_view->AddAnimation(move);
+		_board_view->AddAnimation(premove, move);
 		_animation_stop.store(false);
 
 		if (!_animation_thread) {

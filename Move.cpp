@@ -3,11 +3,17 @@
  */
 #include "Move.h"
 
-#include <cassert>
+//#include <cassert>
 
 #include "Board.h"
 
 namespace ps {
+
+void assert(bool b) {
+	if (!b) {
+		abort();
+	}
+}
 
 SubMove::SubMove(Piece movingPiece, Piece resultingPiece, BoardPosition startPosition, BoardPosition endPosition) :
 		moving_piece(std::move(movingPiece)), resulting_piece(std::move(resultingPiece)),
@@ -58,7 +64,7 @@ std::vector<SubMove> Move::_Move(Board& board) const {
 		}
 
 		if (_positions[1].GetRow() == 0 && toPiece.GetBlackType() == Piece::Type::PAWN) {
-			toPiece = Piece(toPiece.GetBlackType(), Piece::Type::QUEEN);
+			toPiece = Piece(toPiece.GetWhiteType(), Piece::Type::QUEEN);
 		}
 
 		submoves.push_back(SubMove(movingPiece, toPiece, _positions[0], _positions[1]));
@@ -79,7 +85,7 @@ std::vector<SubMove> Move::_Move(Board& board) const {
 		// move the corresponding rook
 		int delta = _positions[1].GetColumn() - _positions[0].GetColumn();
 		BoardPosition rookStart { _positions[0].GetRow(), delta < 0 ? 0 : 7 };
-		BoardPosition rookEnd { _positions[0].GetRow(), delta < 0 ? 2 : 4 };
+		BoardPosition rookEnd { _positions[0].GetRow(), delta < 0 ? 3 : 5 };
 
 		submoves.push_back(SubMove(board[rookStart], board[rookStart], rookStart, rookEnd));
 		board[rookEnd] = board[rookStart];

@@ -378,12 +378,14 @@ bool Game::_MakeMove(Player& player, Window *window, bool isHuman) {
 		return false;
 	}
 
+	Board premove = *_board;
+
 	std::cout << move << std::endl;
 	MakeMove(move);
 	std::cout << GetPsFEN() << std::endl;
 
-	window->GetEventHandler()->CallAfter([window, move, isHuman]() {
-		window->FinishMove(move, isHuman);
+	window->GetEventHandler()->CallAfter([window, move, isHuman, premove]() {
+		window->FinishMove(premove, move, isHuman);
 	});
 
 	return true;

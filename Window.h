@@ -24,7 +24,7 @@ public:
 	float time;
 
 public:
-	constexpr static float MAX_TIME = 1.0f;
+	constexpr static float MAX_TIME = 0.035f;
 
 };
 
@@ -33,11 +33,15 @@ class Animation {
 public:
 	Animation(const Board& startBoard, const Move& move);
 
+	bool HasStarted() const;
+	const Board& GetStartBoard() const;
 	const Move& GetMove() const;
 	AnimationStep& GetCurrentStep();
+	void Start();
 	bool NextStep();
 
 private:
+	bool _started = false;
 	Board _start_board;
 	Move _move;
 	std::vector<AnimationStep> _left_steps;
@@ -63,7 +67,7 @@ public:
     void ResetDisplay();
 	void Redraw();
 	void SetLastMove(const ps::Move& move);
-	void AddAnimation(const ps::Move& move);
+	void AddAnimation(const Board& premove, const ps::Move& move);
 
 private:
     int _Row(int r) const;
@@ -168,7 +172,7 @@ public:
 	void StartGame(Game game, Player *white, Player *black);
 
 	std::future<ps::Move> StartMove(Piece::Color playerColor);
-	void FinishMove(const ps::Move& move, bool fromHuman);
+	void FinishMove(const Board& premove, const ps::Move& move, bool fromHuman);
 
 	void Mate();
 	void Stalemate();

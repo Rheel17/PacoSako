@@ -20,7 +20,7 @@ Move PlayerHuman::MakeMove(const Board& board, const GameMoveData& moveData, std
 		status = move.wait_for(std::chrono::milliseconds(100));
 	} while (status == std::future_status::timeout && !stop);
 
-	if (stop) {
+	if (stop || status != std::future_status::ready) {
 		return Move();
 	} else {
 		return move.get();

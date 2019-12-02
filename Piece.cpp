@@ -85,7 +85,7 @@ bool Piece::operator==(const Piece& piece) const {
 
 std::ostream& operator<<(std::ostream& out, const Piece& piece) {
 	if (piece._color == Piece::Color::UNION) {
-		return out << "union_white_" << piece._white_type << "_black" << piece._black_type;
+		return out << "union_white_" << piece._white_type << "_black_" << piece._black_type;
 	}
 
 	switch (piece._color) {

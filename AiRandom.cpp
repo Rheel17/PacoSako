@@ -10,10 +10,15 @@
 namespace ps {
 
 AiRandom::AiRandom(Piece::Color playerColor) :
-	 Ai(playerColor), _rng(time(nullptr)) {}
+	 Ai(playerColor) {
+
+	auto seed = time(nullptr) * std::intptr_t(this);
+	std::cout << (playerColor == Piece::Color::WHITE ? "white" : "black") << " seed: " << seed << std::endl;
+	_rng = std::mt19937_64(seed);
+}
 
 Move AiRandom::MakeMove(const Board& board, const GameMoveData& moveData, std::atomic_bool& stop) {
-	std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 	const auto& moves = board.GetAllPossibleMoves(_player_color, moveData);
 	std::uniform_int_distribution<size_t> dist(0, moves.size() - 1);
