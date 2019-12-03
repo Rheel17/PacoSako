@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <sstream>
+#include <queue>
 
 namespace ps {
 
@@ -471,95 +472,125 @@ std::vector<Move> Board::_GetAllPossibleMoves(bool checkSako, Piece::Color color
 }
 
 void Board::_AddAllPossibleMoves(const BoardPosition& position, const Piece& piece, Piece::Color color, std::vector<Move>& moves, const GameMoveData& moveData, bool checkSako) const {
-	auto initialMoves = CalculatePossibleMoves(position, piece, color, moveData, checkSako);
-	for (const auto& move : initialMoves) {
-		Piece toPiece = GetPiece(move);
-		bool enPassant = false;
+	if (piece.GetColor() == Piece::Color::UNION || piece.GetTypeOfColor(piece.GetColor()) == Piece::Type::KING) {
+		// since unions or kings cannot make or take over unions, this case is
+		// simple.
 
-		// check for en passant
-		if (GetPiece(move).GetColor() == Piece::Color::EMPTY &&
-				piece.GetTypeOfColor(color) == Piece::Type::PAWN &&
-				move.GetColumn() != position.GetColumn()) {
-
-			toPiece = GetPiece(moveData.en_passant_position);
-			enPassant = true;
+		auto newMoves = CalculatePossibleMoves(position, piece, color, moveData, checkSako);
+		for (const auto& destination : newMoves) {
+			Move& move = moves.emplace_back(position);
+			move.AddPosition(destination);
 		}
 
-		if (piece.GetColor() == Piece::Color::UNION ||
-				toPiece.GetColor() == Piece::Color::EMPTY) {
-			Move& m = moves.emplace_back(position);
-			m.AddPosition(move);
-		} else {
-			Move prefix(position);
-			prefix.AddPosition(move);
-
-			Board dummy = *this;
-			dummy[position] = Piece();
-
-			std::unordered_set<ChainHashKey> seenConfigs{};
-			dummy._AddAllPossibleChainMoves(std::move(prefix), enPassant, piece, moves, moveData, seenConfigs);
-		}
-	}
-}
-
-void Board::_AddAllPossibleChainMoves(Move prefix, bool lastEnPassant, const Piece& piece, std::vector<Move>& moves, const GameMoveData& moveData, std::unordered_set<ChainHashKey>& seenConfigs) const {
-	const BoardPosition& position = prefix.GetPositions().back();
-	ChainHashKey currentConfig = { *this, piece, position };
-
-	if (const auto& [iter, didInsert] = seenConfigs.insert(currentConfig); !didInsert) {
 		return;
 	}
 
-	const Piece& fromPiece = lastEnPassant ? GetPiece(moveData.en_passant_position) : GetPiece(position);
+	// breadth-first search for normal piece to find chain moves and to prefer
+	// shorter chains over longer ones.
 
-	if (piece.GetColor() == opposite(fromPiece.GetColor())) {
-		moves.push_back(prefix);
-		return;
-	}
+	// remove the piece from a dummy board.
+	Board startDummy = *this;
+	startDummy[position] = Piece();
 
-	Board dummy(*this);
+	// the 'seen' set represents all seen configurations, to ensure we
+	// never get into an infinite loop.
+	std::unordered_set<ChainHashKey> seen;
 
-	if (lastEnPassant) {
-		dummy[position] = dummy[moveData.en_passant_position];
-		dummy[moveData.en_passant_position] = Piece();
-	}
+	// the 'fringe' is a queue of all move-prefixes that we need to
+	// go through to get all chain moves.
+	std::queue<ChainHashKey> fringe;
+	fringe.push(ChainHashKey{ std::move(startDummy), piece, position, { -1, -1 }, Move(position) });
 
-	Piece movingPiece = dummy[position].MakeUnionWith(piece);
-	auto pieceMoves = dummy.CalculatePossibleMoves(position, movingPiece, movingPiece.GetColor(), moveData, false);
+	while (!fringe.empty()) {
+		// The current state:
+		//   current.board			The board state after the prefix move.
+		//   current.moving_piece	The currently moving piece.
+		//   current.piece_origin	The origin of the moving piece.
+		//   current.prefix			The move sequence before the current
+		//							situation.
+		//   current.ep_dest		If there was an en passant move in the
+		//							prefix, the destination square of the en
+		//							passant union, which is a forbidden square
+		//							for other pieces.
+		ChainHashKey current = fringe.front();
+		fringe.pop();
 
-	if (position.GetRow() == 0 && piece.GetBlackType() == Piece::Type::PAWN) {
-		dummy[position] = Piece(dummy[position].GetWhiteType(), Piece::Type::QUEEN);
-	}
+		// find all possible next positions
+		auto nextPositions = current.board.CalculatePossibleMoves(
+				current.piece_origin, current.moving_piece, color, moveData, checkSako);
 
-	if (position.GetRow() == 7 && piece.GetWhiteType() == Piece::Type::PAWN) {
-		dummy[position] = Piece(Piece::Type::QUEEN, dummy[position].GetBlackType());
-	}
+		// check all new positions and add or recurse
+		for (const auto& moveTo : nextPositions) {
+			// first: check that the move to is not a forbidden square because
+			// of an en passant move in the prefix.
+			if (moveTo == current.ep_dest) {
+				continue;
+			}
 
-	for (const auto& move : pieceMoves) {
-		Piece toPiece = dummy[move];
-		bool enPassant = false;
+			// check if this move is a pawn promotion
+			Piece movingPiece = current.moving_piece;
 
-		if (toPiece.GetColor() == Piece::Color::EMPTY &&
-				movingPiece.GetTypeOfColor(movingPiece.GetColor()) == Piece::Type::PAWN &&
-				move.GetColumn() != position.GetColumn()) {
+			if (color == Piece::Color::BLACK && moveTo.GetRow() == 0 && movingPiece.GetBlackType() == Piece::Type::PAWN) {
+				movingPiece = Piece(Piece::Type::NONE, Piece::Type::QUEEN);
+			}
 
-			toPiece = dummy[moveData.en_passant_position];
-			enPassant = true;
-		}
+			if (color == Piece::Color::WHITE && moveTo.GetRow() == 7 && movingPiece.GetWhiteType() == Piece::Type::PAWN) {
+				movingPiece = Piece(Piece::Type::QUEEN, Piece::Type::NONE);
+			}
 
-		if (toPiece.GetColor() != Piece::Color::UNION) {
-			Move& m = moves.emplace_back(prefix);
-			m.AddPosition(move);
-		} else {
-			Move newPrefix(prefix);
-			newPrefix.AddPosition(move);
-			dummy._AddAllPossibleChainMoves(newPrefix, enPassant, movingPiece, moves, moveData, seenConfigs);
+			// check for en passant
+			auto newOrigin = moveTo;
+			bool enPassant = false;
+
+			if (current.board[moveTo].GetColor() == Piece::Color::EMPTY &&
+					movingPiece.GetTypeOfColor(color) == Piece::Type::PAWN &&
+					moveTo.GetColumn() != current.piece_origin.GetColumn()) {
+
+				newOrigin = moveData.en_passant_position;
+				enPassant = true;
+			}
+
+			// find the destination piece (could be the en passant pawn/union)
+			const Piece& toPiece = current.board[newOrigin];
+
+			if (toPiece.GetColor() != Piece::Color::UNION) {
+				// this is not a union piece, so this is the tail of a chain.
+				Move& move = moves.emplace_back(current.prefix);
+				move.AddPosition(moveTo);
+				continue;
+			}
+
+			// the destination is a union piece, so we recurse.
+
+			// create the new board
+			Board dummy = current.board;
+			Piece newMovingPiece = dummy[newOrigin].MakeUnionWith(movingPiece);
+
+			// create the new prefix
+			Move newPrefix = current.prefix;
+			newPrefix.AddPosition(moveTo);
+
+			ChainHashKey next{
+				std::move(dummy),
+				newMovingPiece,
+				newOrigin,
+				enPassant ? moveTo : current.ep_dest,
+				newPrefix
+			};
+
+			// check if we have already seen the new state
+			if (const auto& [iter, insert] = seen.insert(next); !insert) {
+				continue;
+			}
+
+			// add the new state to the fringe.
+			fringe.push(next);
 		}
 	}
 }
 
 bool ChainHashKey::operator==(const ChainHashKey& key) const {
-	return key.board == board && key.moving_piece == moving_piece && key.piece_origin == piece_origin;
+	return key.board == board && key.moving_piece == moving_piece && key.piece_origin == piece_origin && key.ep_dest == ep_dest;
 }
 
 }

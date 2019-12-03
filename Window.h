@@ -93,6 +93,7 @@ private:
 	bool _is_dragging = false;
 	wxPoint2DDouble _mouse_point;
 	BoardPosition _mouse_position = { -1, -1 };
+	BoardPosition _ep_dest = { -1, -1 };
 
 	BoardPosition _moving_piece_origin { -1, -1 };
 	Piece _moving_piece;

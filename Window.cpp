@@ -361,6 +361,10 @@ void BoardView::_Draw(wxGraphicsContext *gc) {
 	gc->SetBrush(*_brush_tile_mouseover);
 
 	for (const auto& move : _possible_moves) {
+		if (move == _ep_dest) {
+			continue;
+		}
+
 		if (move == _mouse_position) {
 			gc->DrawRectangle(
 				_tile_size * _Col(_mouse_position.GetColumn()),
@@ -484,7 +488,7 @@ void BoardView::_PutDown() {
 
 	// check if the dropped square is a valid position for the current moving
 	// piece
-	if (_moving_piece_origin != _mouse_position && _mouse_position.IsValid() &&
+	if (_moving_piece_origin != _mouse_position && _mouse_position.IsValid() && _mouse_position != _ep_dest &&
 			std::find(_possible_moves.begin(), _possible_moves.end(), _mouse_position) != _possible_moves.end()) {
 
 		// we can drop the piece here; so do that.
@@ -497,17 +501,17 @@ void BoardView::_PutDown() {
 				_moving_piece_origin.GetColumn() != _mouse_position.GetColumn()) {
 
 			// this was an en passant move
-			Piece original = _display[{ _moving_piece_origin.GetRow(), _mouse_position.GetColumn() }];
-			_display[{ _moving_piece_origin.GetRow(), _mouse_position.GetColumn() }] = Piece();
+			BoardPosition originalPosition { _moving_piece_origin.GetRow(), _mouse_position.GetColumn() };
+			Piece original = _display[originalPosition];
 
 			soundUnion.Play();
 
 			if (original.GetColor() == Piece::Color::UNION) {
 				// the target was a union, so chain the move with the new piece.
 
-				_display[_mouse_position] = original;
-				_moving_piece = _display[_mouse_position].MakeUnionWith(_moving_piece);
-				_moving_piece_origin = _mouse_position;
+				_ep_dest = _mouse_position;
+				_moving_piece = _display[originalPosition].MakeUnionWith(_moving_piece);
+				_moving_piece_origin = originalPosition;
 				_possible_moves = _display.CalculatePossibleMoves(_moving_piece_origin, _moving_piece, _player_color, _game->GetMoveData());
 				return;
 			} else {
@@ -556,6 +560,7 @@ void BoardView::_PutDown() {
 
 	// we are done dropping the piece, and it was the last piece of the chain:
 	// clear the moving piece and reset the displayed board to the actual board.
+	_ep_dest = { -1, -1 };
 	_moving_piece_origin = { -1, -1 };
 	_moving_piece = Piece();
 	_possible_moves.clear();

@@ -56,13 +56,17 @@ struct ChainHashKey {
 	const Board board;
 	const Piece moving_piece;
 	const BoardPosition piece_origin;
+	const BoardPosition ep_dest;
+
+	// not included in the hash; only for backtracking purposes.
+	const Move prefix;
 
 	bool operator==(const ChainHashKey& key) const;
 };
 
 }
 
-namespace std{
+namespace std {
 
 template<>
 struct hash<ps::Board> {
@@ -81,9 +85,10 @@ template<>
 struct hash<ps::ChainHashKey> {
 	size_t operator()(const ps::ChainHashKey& key) const {
 		size_t result = 29;
-		result = 997 * result + hash<ps::Board>()(key.board);
-		result = 997 * result + hash<ps::Piece>()(key.moving_piece);
-		result = 997 * result + hash<ps::BoardPosition>()(key.piece_origin);
+		result = 17 * result + hash<ps::Board>()(key.board);
+		result = 17 * result + hash<ps::Piece>()(key.moving_piece);
+		result = 17 * result + hash<ps::BoardPosition>()(key.piece_origin);
+		result = 17 * result + hash<ps::BoardPosition>()(key.ep_dest);
 		return result;
 	}
 };
