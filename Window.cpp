@@ -8,6 +8,10 @@
 #include <wx/wfstream.h>
 #include <wx/graphics.h>
 #include <wx/sound.h>
+#include <wx/tglbtn.h>
+
+#include <sstream>
+#include <string>
 
 #include "PlayerHuman.h"
 #include "AiRandom.h"
@@ -755,9 +759,21 @@ Window::Window() :
 	splitter->SetWindowStyle(splitter->GetWindowStyle() | wxSP_LIVE_UPDATE);
 
 	_board_view = new BoardView(splitter);
-	wxPanel *right = new wxPanel(splitter, wxID_ANY, wxDefault, wxBORDER_SUNKEN);
+	_move_list = new wxScrolledWindow(splitter, wxID_ANY, wxDefault, wxBORDER_SUNKEN | wxVSCROLL);
 
-	splitter->SplitVertically(_board_view, right);
+	wxBoxSizer *parentSizer = new wxBoxSizer(wxVERTICAL);
+	_move_list_sizer = new wxGridSizer(2);
+
+	wxStaticText *whiteText = new wxStaticText(_move_list, wxID_ANY, L"White Moves");
+	wxStaticText *blackText = new wxStaticText(_move_list, wxID_ANY, L"Black Moves");
+	_move_list_sizer->Add(whiteText, wxSizerFlags().Expand());
+	_move_list_sizer->Add(blackText, wxSizerFlags().Expand());
+
+	parentSizer->Add(_move_list_sizer, wxSizerFlags().Expand());
+	_move_list->SetSizer(parentSizer);
+	_move_list->FitInside();
+
+	splitter->SplitVertically(_board_view, _move_list);
 
 	wxBoxSizer *topSizer = new wxBoxSizer(wxHORIZONTAL);
 	topSizer->Add(splitter, 1, wxEXPAND);
@@ -803,6 +819,15 @@ std::future<ps::Move> Window::StartMove(Piece::Color playerColor) {
 
 void Window::FinishMove(const Board& premove, const ps::Move& move, bool fromHuman) {
 	_board_view->SetLastMove(move);
+
+	std::stringstream ss;
+	ss << move;
+
+	wxToggleButton *moveControl = new wxToggleButton(_move_list, wxID_ANY, ss.str().c_str());
+
+	_move_list_sizer->Add(moveControl, wxSizerFlags().Expand());
+	_move_list->FitInside();
+	_move_list->SetScrollRate(5, 5);
 
 	if (fromHuman) {
 		_board_view->ResetDisplay();

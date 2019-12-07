@@ -5,6 +5,7 @@
 #define WINDOW_H_
 
 #include <wx/wx.h>
+#include <wx/scrolwin.h>
 
 #include <memory>
 #include <unordered_map>
@@ -183,6 +184,8 @@ private:
 
 	wxMenuBar *_menu;
 	wxMenu *_menu_game;
+	wxScrolledWindow *_move_list;
+	wxGridSizer *_move_list_sizer;
 	BoardView *_board_view;
 
 	std::promise<ps::Move> *_move;
