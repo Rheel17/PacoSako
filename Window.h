@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Levi van Rheenen. All rights reserved.
+ * Copyright © 2020 Levi van Rheenen. All rights reserved.
  */
 #ifndef WINDOW_H_
 #define WINDOW_H_

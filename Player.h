@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Levi van Rheenen. All rights reserved.
+ * Copyright © 2020 Levi van Rheenen. All rights reserved.
  */
 #ifndef PLAYER_H_
 #define PLAYER_H_

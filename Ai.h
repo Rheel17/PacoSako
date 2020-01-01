@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Levi van Rheenen. All rights reserved.
+ * Copyright © 2020 Levi van Rheenen. All rights reserved.
  */
 #ifndef AI_H_
 #define AI_H_
